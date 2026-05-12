@@ -90,9 +90,9 @@
                         </div>
                     </div>
                     <!-- Status Badge -->
-                    <span th:if="${post.status.name() == 'PENDING'}" class="text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-medium">待审核</span>
-                    <span th:if="${post.status.name() == 'APPROVED'}" class="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">已通过</span>
-                    <span th:if="${post.status.name() == 'REJECTED'}" class="text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-medium">已拒绝</span>
+                    <span th:if="${post.status != null and post.status.name() == 'PENDING'}" class="text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-medium">待审核</span>
+                    <span th:if="${post.status != null and post.status.name() == 'APPROVED'}" class="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">已通过</span>
+                    <span th:if="${post.status != null and post.status.name() == 'REJECTED'}" class="text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-medium">已拒绝</span>
                 </div>
 
                 <div class="px-5 pb-3">
@@ -107,7 +107,7 @@
 
                 <!-- Actions -->
                 <div class="flex items-center gap-2 border-t border-border px-5 py-3 bg-gray-50">
-                    <form th:if="${post.status.name() == 'PENDING'}" method="post"
+                    <form th:if="${post.status != null and post.status.name() == 'PENDING'}" method="post"
                           th:action="@{/admin/post/{id}/approve(id=${post.id})}">
                         <input type="hidden" name="page" th:value="${currentPage}"/>
                         <input type="hidden" name="status" th:value="${currentStatus}"/>
@@ -115,7 +115,7 @@
                             &#9989; 通过
                         </button>
                     </form>
-                    <form th:if="${post.status.name() == 'PENDING'}" method="post"
+                    <form th:if="${post.status != null and post.status.name() == 'PENDING'}" method="post"
                           th:action="@{/admin/post/{id}/reject(id=${post.id})}"
                           onsubmit="return confirm('确定拒绝该帖子吗？')">
                         <input type="hidden" name="page" th:value="${currentPage}"/>

@@ -82,8 +82,8 @@
                 <span class="text-xs text-gray-400 ml-2" th:text="${#temporals.format(pv.post.createdAt, 'MM-dd HH:mm')}">时间</span>
             </div>
             <!-- Status badge for my posts -->
-            <span th:if="${isMyPosts and pv.post.status.name() == 'PENDING'}" class="ml-auto text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-medium">待审核</span>
-            <span th:if="${isMyPosts and pv.post.status.name() == 'REJECTED'}" class="ml-auto text-xs bg-red-100 text-red-600 px-2.5 py-1 rounded-full font-medium">未通过</span>
+            <span th:if="${isMyPosts and pv.post.status != null and pv.post.status.name() == 'PENDING'}" class="ml-auto text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-medium">待审核</span>
+            <span th:if="${isMyPosts and pv.post.status != null and pv.post.status.name() == 'REJECTED'}" class="ml-auto text-xs bg-red-100 text-red-600 px-2.5 py-1 rounded-full font-medium">未通过</span>
         </div>
 
         <!-- Content -->

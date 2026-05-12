@@ -16,7 +16,7 @@ public class Post {
     private Long id;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false, length = 20)
+    @Column(length = 20)
     private Status status = Status.PENDING;
 
     @ManyToOne
