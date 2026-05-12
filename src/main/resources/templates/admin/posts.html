@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>帖子审核 - 管理后台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: '#ea580c', accent: '#f97316', muted: '#f5f5f5', 'muted-foreground': '#737373', border: '#e5e5e5' }}}
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Nav -->
+<nav class="bg-white shadow-sm border-b border-border sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4">
+        <div class="flex justify-between items-center h-14">
+            <a class="text-xl font-bold text-primary" href="/">&#127869; 美食打卡</a>
+            <div class="flex items-center gap-4 text-sm">
+                <span class="text-gray-400">管理后台</span>
+                <a href="/" class="text-gray-500 hover:text-primary">首页</a>
+                <a href="/posts" class="text-gray-500 hover:text-primary">社区</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-5xl mx-auto px-4 py-6">
+
+    <!-- Side Menu + Content -->
+    <div class="flex gap-6">
+
+        <!-- Sidebar -->
+        <div class="w-48 shrink-0">
+            <div class="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+                <a th:href="@{/admin/posts(status='pending')}"
+                   class="flex items-center justify-between px-4 py-3 text-sm border-b border-border hover:bg-gray-50"
+                   th:classappend="${currentStatus == 'pending'} ? 'bg-orange-50 text-primary font-semibold' : 'text-gray-700'">
+                    <span>&#128203; 帖子审核</span>
+                    <span th:if="${pendingCount > 0}" class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full"
+                          th:text="${pendingCount}">0</span>
+                </a>
+                <a th:href="@{/admin/posts(status='all')}"
+                   class="block px-4 py-3 text-sm border-b border-border hover:bg-gray-50"
+                   th:classappend="${currentStatus == 'all'} ? 'bg-orange-50 text-primary font-semibold' : 'text-gray-700'">
+                    &#128220; 全部帖子
+                </a>
+                <a th:href="@{/admin/comments}"
+                   class="block px-4 py-3 text-sm hover:bg-gray-50 text-gray-700">
+                    &#128172; 评论管理
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 min-w-0">
+
+            <!-- Tab -->
+            <div class="bg-white rounded-xl shadow-sm border border-border mb-4 p-4">
+                <div class="flex items-center gap-2">
+                    <a th:href="@{/admin/posts(status='pending')}" class="px-4 py-1.5 rounded-full text-sm font-medium"
+                       th:classappend="${currentStatus == 'pending'} ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+                        待审核 <span th:if="${pendingCount > 0}" th:text="'(' + ${pendingCount} + ')'">(0)</span>
+                    </a>
+                    <a th:href="@{/admin/posts(status='all')}" class="px-4 py-1.5 rounded-full text-sm font-medium"
+                       th:classappend="${currentStatus == 'all'} ? 'bg-primary text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'">
+                        全部
+                    </a>
+                </div>
+            </div>
+
+            <!-- Post List -->
+            <div th:if="${#lists.isEmpty(posts)}" class="text-center py-16 bg-white rounded-xl shadow-sm border border-border">
+                <div class="text-5xl mb-4">&#9989;</div>
+                <p class="text-gray-400 text-lg" th:text="${currentStatus == 'pending'} ? '暂无待审核帖子' : '暂无帖子'">暂无帖子</p>
+            </div>
+
+            <div th:each="post : ${posts}" class="bg-white rounded-xl shadow-sm border border-border mb-3 overflow-hidden">
+                <div class="flex items-center justify-between px-5 pt-4 pb-3">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 bg-gradient-to-br from-orange-400 to-red-400 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                             th:text="${post.author.name != null ? post.author.name.charAt(0) : post.author.username.charAt(0)}">U</div>
+                        <div>
+                            <span class="text-sm font-semibold text-gray-800"
+                                  th:text="${post.author.name != null ? post.author.name : post.author.username}">用户</span>
+                            <span class="text-xs text-gray-400 ml-2"
+                                  th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">时间</span>
+                        </div>
+                    </div>
+                    <!-- Status Badge -->
+                    <span th:if="${post.status.name() == 'PENDING'}" class="text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-medium">待审核</span>
+                    <span th:if="${post.status.name() == 'APPROVED'}" class="text-xs bg-green-100 text-green-700 px-2.5 py-1 rounded-full font-medium">已通过</span>
+                    <span th:if="${post.status.name() == 'REJECTED'}" class="text-xs bg-red-100 text-red-700 px-2.5 py-1 rounded-full font-medium">已拒绝</span>
+                </div>
+
+                <div class="px-5 pb-3">
+                    <h3 class="text-base font-bold text-gray-900 mb-1" th:text="${post.title}">标题</h3>
+                    <p class="text-sm text-gray-600 leading-relaxed"
+                       th:text="${post.content != null && post.content.length() > 150} ? ${post.content.substring(0, 150)} + '...' : ${post.content}">内容预览</p>
+                </div>
+
+                <div th:if="${post.location}" class="px-5 pb-3">
+                    <span class="text-xs text-gray-400">&#128205; <span th:text="${post.location}">地点</span></span>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-2 border-t border-border px-5 py-3 bg-gray-50">
+                    <form th:if="${post.status.name() == 'PENDING'}" method="post"
+                          th:action="@{/admin/post/{id}/approve(id=${post.id})}">
+                        <input type="hidden" name="page" th:value="${currentPage}"/>
+                        <input type="hidden" name="status" th:value="${currentStatus}"/>
+                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white text-xs px-4 py-1.5 rounded-lg font-medium transition-colors">
+                            &#9989; 通过
+                        </button>
+                    </form>
+                    <form th:if="${post.status.name() == 'PENDING'}" method="post"
+                          th:action="@{/admin/post/{id}/reject(id=${post.id})}"
+                          onsubmit="return confirm('确定拒绝该帖子吗？')">
+                        <input type="hidden" name="page" th:value="${currentPage}"/>
+                        <input type="hidden" name="status" th:value="${currentStatus}"/>
+                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white text-xs px-4 py-1.5 rounded-lg font-medium transition-colors">
+                            &#10060; 拒绝
+                        </button>
+                    </form>
+                    <a th:href="@{/post/{id}(id=${post.id})}" class="text-xs text-gray-500 hover:text-primary px-3 py-1.5"
+                       target="_blank">&#128065; 查看</a>
+                    <form method="post"
+                          th:action="@{/admin/post/{id}/delete(id=${post.id})}"
+                          onsubmit="return confirm('确定删除该帖子吗？此操作不可恢复！')">
+                        <input type="hidden" name="page" th:value="${currentPage}"/>
+                        <input type="hidden" name="status" th:value="${currentStatus}"/>
+                        <button type="submit" class="text-xs text-gray-400 hover:text-red-500 px-3 py-1.5 transition-colors">
+                            &#128465; 删除
+                        </button>
+                    </form>
+                    <span class="ml-auto text-xs text-gray-400">
+                        &#128172; <span th:text="${post.commentCount}">0</span>
+                        &nbsp;&#10084; <span th:text="${post.likeCount}">0</span>
+                        &nbsp;&#11088; <span th:text="${post.favoriteCount}">0</span>
+                    </span>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div th:if="${totalPages != null and totalPages > 1}" class="flex justify-center gap-2 mt-6">
+                <a th:href="@{/admin/posts(status=${currentStatus}, page=${currentPage - 1})}"
+                   th:classappend="${!hasPrev} ? 'pointer-events-none opacity-40' : ''"
+                   class="px-4 py-2 bg-white border border-border rounded-lg text-sm hover:bg-gray-50">&laquo; 上一页</a>
+                <span class="px-4 py-2 text-sm text-gray-500" th:text="${currentPage + 1} + '/' + ${totalPages}">1/1</span>
+                <a th:href="@{/admin/posts(status=${currentStatus}, page=${currentPage + 1})}"
+                   th:classappend="${!hasNext} ? 'pointer-events-none opacity-40' : ''"
+                   class="px-4 py-2 bg-white border border-border rounded-lg text-sm hover:bg-gray-50">下一页 &raquo;</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

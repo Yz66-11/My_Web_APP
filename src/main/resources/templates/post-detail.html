@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${post.title} + ' - 美食打卡'">帖子详情</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: '#ea580c', accent: '#f97316', muted: '#f5f5f5', 'muted-foreground': '#737373', border: '#e5e5e5' }}}
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Nav -->
+<nav class="bg-white shadow-sm border-b border-border sticky top-0 z-50">
+    <div class="max-w-3xl mx-auto px-4">
+        <div class="flex justify-between items-center h-14">
+            <a class="text-xl font-bold text-primary" href="/">&#127869; 美食打卡</a>
+            <a href="/posts" class="text-sm text-gray-500 hover:text-primary">&larr; 返回社区</a>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-3xl mx-auto px-4 py-6">
+
+    <!-- Post Card -->
+    <div class="bg-white rounded-xl shadow-sm border border-border mb-6 overflow-hidden">
+        <!-- Author -->
+        <div class="flex items-center justify-between px-5 pt-5 pb-3">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-400 rounded-full flex items-center justify-center text-white font-bold"
+                     th:text="${post.author.name != null ? post.author.name.charAt(0) : post.author.username.charAt(0)}">U</div>
+                <div>
+                    <span class="text-sm font-semibold text-gray-900" th:text="${post.author.name != null ? post.author.name : post.author.username}">用户</span>
+                    <div class="text-xs text-gray-400" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">时间</div>
+                </div>
+            </div>
+            <form th:if="${currentUserId != null and currentUserId == post.author.id}" method="post"
+                  th:action="@{/post/{id}/delete(id=${post.id})}"
+                  onsubmit="return confirm('确定要删除这篇帖子吗？')">
+                <button type="submit" class="text-xs text-gray-400 hover:text-red-500 transition-colors">删除</button>
+            </form>
+            <span th:if="${post.status.name() == 'PENDING'}" class="text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-medium ml-2">待审核</span>
+            <span th:if="${post.status.name() == 'REJECTED'}" class="text-xs bg-red-100 text-red-600 px-2.5 py-1 rounded-full font-medium ml-2">未通过</span>
+        </div>
+
+        <!-- Title & Content -->
+        <div class="px-5 pb-4">
+            <h1 class="text-lg font-bold text-gray-900 mb-3" th:text="${post.title}">标题</h1>
+            <div class="text-sm text-gray-700 leading-relaxed whitespace-pre-line" th:text="${post.content}">正文内容</div>
+        </div>
+
+        <!-- Images -->
+        <div th:if="${post.imageUrls != null and !post.imageUrls.isBlank()}" class="px-5 pb-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
+                <div th:each="img : ${post.imageUrls.split(',')}" class="aspect-square bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg flex items-center justify-center">
+                    <span class="text-4xl opacity-60">&#128247;</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Location -->
+        <div th:if="${post.location}" class="px-5 pb-4">
+            <span class="text-xs text-gray-400 bg-gray-50 px-3 py-1.5 rounded-full">&#128205; <span th:text="${post.location}">地点</span></span>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex items-center gap-6 border-t border-border px-5 py-3 text-sm text-gray-500">
+            <form method="post" th:action="@{/post/{id}/like(id=${post.id})}" class="flex items-center gap-1.5 cursor-pointer hover:text-red-500">
+                <button type="submit" class="flex items-center gap-1.5">
+                    <span th:text="${liked} ? '&#10084;' : '&#9825;'" th:style="${liked} ? 'color:#ef4444;font-size:1.1em' : ''">&#9825;</span>
+                    <span th:text="${post.likeCount}">0</span>
+                    <span class="text-xs" th:text="${liked} ? '已赞' : '点赞'">点赞</span>
+                </button>
+            </form>
+            <span class="flex items-center gap-1.5">
+                <span>&#128172;</span>
+                <span th:text="${post.commentCount}">0</span>
+                <span class="text-xs">评论</span>
+            </span>
+            <form method="post" th:action="@{/post/{id}/favorite(id=${post.id})}" class="flex items-center gap-1.5 cursor-pointer hover:text-yellow-500">
+                <button type="submit" class="flex items-center gap-1.5">
+                    <span th:text="${favorited} ? '&#11088;' : '&#9734;'" th:style="${favorited} ? 'color:#eab308;font-size:1.1em' : ''">&#9734;</span>
+                    <span th:text="${post.favoriteCount}">0</span>
+                    <span class="text-xs" th:text="${favorited} ? '已收藏' : '收藏'">收藏</span>
+                </button>
+            </form>
+            <button type="button" th:attr="onclick='sharePost(' + ${post.id} + ')'"
+                    class="flex items-center gap-1.5 hover:text-primary">
+                <span>&#128228;</span>
+                <span th:text="${post.shareCount}">0</span>
+                <span class="text-xs">转发</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Comment Section -->
+    <div class="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+        <div class="px-5 py-4 border-b border-border">
+            <h3 class="font-bold text-gray-900">评论 <span class="text-gray-400 font-normal" th:text="'(' + ${#lists.size(comments)} + ')'">(0)</span></h3>
+        </div>
+
+        <!-- Comment Input -->
+        <form method="post" th:action="@{/post/{id}/comment(id=${post.id})}" class="px-5 py-4 border-b border-border">
+            <div class="flex gap-3">
+                <input type="text" name="content" required placeholder="写一条评论..." maxlength="500"
+                       class="flex-1 px-4 py-2 border border-border rounded-full text-sm focus:outline-none focus:ring-2 focus:ring-primary"/>
+                <button type="submit" class="bg-primary hover:bg-accent text-white px-5 py-2 rounded-full text-sm font-medium transition-colors">
+                    发送
+                </button>
+            </div>
+        </form>
+
+        <!-- Comments List -->
+        <div th:if="${#lists.isEmpty(comments)}" class="px-5 py-8 text-center text-gray-400 text-sm">
+            暂无评论，快来抢沙发
+        </div>
+        <div th:each="c : ${comments}" class="flex gap-3 px-5 py-4 border-b border-border last:border-b-0">
+            <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                 th:text="${c.author.name != null ? c.author.name.charAt(0) : c.author.username.charAt(0)}">U</div>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 mb-1">
+                    <span class="text-sm font-semibold text-gray-800" th:text="${c.author.name != null ? c.author.name : c.author.username}">用户</span>
+                    <span class="text-xs text-gray-400" th:text="${#temporals.format(c.createdAt, 'MM-dd HH:mm')}">时间</span>
+                </div>
+                <p class="text-sm text-gray-700" th:text="${c.content}">评论内容</p>
+            </div>
+            <form th:if="${currentUserId != null and (currentUserId == c.author.id or isAdmin)}"
+                  method="post"
+                  th:action="@{/admin/comment/{id}/delete(id=${c.id})}"
+                  class="shrink-0">
+                <input type="hidden" name="page" value="0"/>
+                <button type="submit" class="text-xs text-gray-300 hover:text-red-400" onclick="return confirm('确定删除？')">删除</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+function sharePost(postId) {
+    fetch('/post/' + postId + '/share', { method: 'POST' })
+        .then(() => {
+            if (navigator.share) {
+                navigator.share({ title: document.title, url: location.href }).catch(() => {});
+            } else {
+                navigator.clipboard.writeText(location.href).then(() => alert('链接已复制到剪贴板'));
+            }
+            location.reload();
+        });
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>我的 - 美食评价系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+<!-- Navigation -->
+<nav class="bg-white shadow-lg border-b-4 border-orange-500">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center py-4">
+            <a class="text-2xl font-bold text-orange-600 flex items-center" href="/">
+                🍽️ 美食评价系统
+            </a>
+            <div class="flex items-center space-x-4">
+                <a href="/" class="text-gray-600 hover:text-orange-600 transition-colors">首页</a>
+                <a href="/merchants" class="text-gray-600 hover:text-orange-600 transition-colors">商家列表</a>
+                <a href="/food-gallery" class="text-gray-600 hover:text-orange-600 transition-colors">美食图鉴</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Profile Header -->
+<div class="bg-gradient-to-r from-orange-500 to-red-500 text-white py-12">
+    <div class="container mx-auto px-4 text-center">
+        <div class="w-20 h-20 bg-white rounded-full mx-auto mb-3 flex items-center justify-center text-3xl">👤</div>
+        <h1 class="text-3xl font-bold mb-1" th:text="${username}">用户名</h1>
+        <p class="text-sm opacity-80" th:text="${email}">email@example.com</p>
+    </div>
+</div>
+
+<!-- Messages -->
+<div th:if="${success}" class="container mx-auto px-4 mt-6">
+    <div class="max-w-3xl mx-auto bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
+        <span th:text="${success}"></span>
+    </div>
+</div>
+<div th:if="${error}" class="container mx-auto px-4 mt-6">
+    <div class="max-w-3xl mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+        <span th:text="${error}"></span>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-8">
+    <div class="max-w-3xl mx-auto space-y-6">
+
+        <!-- Statistics -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">我的统计</h2>
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div class="p-3">
+                    <div class="text-3xl font-bold text-orange-600">0</div>
+                    <div class="text-gray-600 text-sm mt-1">打卡次数</div>
+                </div>
+                <div class="p-3">
+                    <div class="text-3xl font-bold text-orange-600">0</div>
+                    <div class="text-gray-600 text-sm mt-1">解锁图鉴</div>
+                </div>
+                <div class="p-3">
+                    <div class="text-3xl font-bold text-orange-600">0</div>
+                    <div class="text-gray-600 text-sm mt-1">收藏商家</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Personal Info -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-xl font-bold text-gray-800">个人信息</h2>
+                <button onclick="toggleEdit()" id="editBtn" class="text-orange-500 hover:text-orange-700 text-sm font-medium">
+                    ✏️ 编辑
+                </button>
+            </div>
+
+            <!-- Display Mode -->
+            <div id="displayMode">
+                <div class="space-y-4">
+                    <div class="flex border-b border-gray-100 pb-3">
+                        <span class="text-gray-500 w-24 flex-shrink-0">用户名</span>
+                        <span class="text-gray-800 font-medium" th:text="${username}">-</span>
+                    </div>
+                    <div class="flex border-b border-gray-100 pb-3">
+                        <span class="text-gray-500 w-24 flex-shrink-0">邮箱</span>
+                        <span class="text-gray-800" th:text="${email}">-</span>
+                    </div>
+                    <div class="flex border-b border-gray-100 pb-3">
+                        <span class="text-gray-500 w-24 flex-shrink-0">昵称</span>
+                        <span class="text-gray-800" th:text="${name ?: '未设置'}">-</span>
+                    </div>
+                    <div class="flex border-b border-gray-100 pb-3">
+                        <span class="text-gray-500 w-24 flex-shrink-0">手机</span>
+                        <span class="text-gray-800" th:text="${phone ?: '未设置'}">-</span>
+                    </div>
+                    <div class="flex border-b border-gray-100 pb-3">
+                        <span class="text-gray-500 w-24 flex-shrink-0">性别</span>
+                        <span class="text-gray-800" th:text="${displayGender}">-</span>
+                    </div>
+                    <div class="flex border-b border-gray-100 pb-3">
+                        <span class="text-gray-500 w-24 flex-shrink-0">年龄</span>
+                        <span class="text-gray-800" th:text="${age != null ? age + '岁' : '未设置'}">-</span>
+                    </div>
+                    <div class="flex">
+                        <span class="text-gray-500 w-24 flex-shrink-0">个性签名</span>
+                        <span class="text-gray-800" th:text="${bio ?: '未设置'}">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Mode (hidden by default) -->
+            <div id="editMode" class="hidden">
+                <form action="/update-profile" method="post" class="space-y-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-600 text-sm font-medium mb-1">昵称</label>
+                            <input type="text" name="name" th:value="${name}" placeholder="请输入昵称"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm font-medium mb-1">手机号</label>
+                            <input type="text" name="phone" th:value="${phone}" placeholder="请输入手机号"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-gray-600 text-sm font-medium mb-1">性别</label>
+                            <select name="gender" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
+                                <option value="0" th:selected="${gender == null or gender == 0}">未设置</option>
+                                <option value="1" th:selected="${gender == 1}">男</option>
+                                <option value="2" th:selected="${gender == 2}">女</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-600 text-sm font-medium mb-1">年龄</label>
+                            <input type="number" name="age" th:value="${age}" min="1" max="150" placeholder="请输入年龄"
+                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-gray-600 text-sm font-medium mb-1">个性签名</label>
+                        <textarea name="bio" rows="3" placeholder="介绍一下自己吧..."
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
+                                  th:text="${bio}"></textarea>
+                    </div>
+                    <div class="flex space-x-4 pt-2">
+                        <button type="submit" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-lg transition-colors">
+                            保存修改
+                        </button>
+                        <button type="button" onclick="toggleEdit()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2.5 rounded-lg transition-colors">
+                            取消
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Account Management -->
+        <div class="bg-white rounded-xl shadow-md p-6">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">账号管理</h2>
+            <div class="space-y-2">
+                <button onclick="togglePassword()" class="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
+                    <div class="flex items-center">
+                        <span class="text-xl mr-3">🔑</span>
+                        <span class="font-medium text-gray-800">修改密码</span>
+                    </div>
+                    <span class="text-gray-400">›</span>
+                </button>
+                <a href="/shop/apply" class="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors block">
+                    <div class="flex items-center">
+                        <span class="text-xl mr-3">🏪</span>
+                        <span class="font-medium text-gray-800">商家入驻</span>
+                    </div>
+                    <span class="text-gray-400">›</span>
+                </a>
+                <a href="/my-shops" class="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors block">
+                    <div class="flex items-center">
+                        <span class="text-xl mr-3">📋</span>
+                        <span class="font-medium text-gray-800">我的店铺</span>
+                    </div>
+                    <span class="text-gray-400">›</span>
+                </a>
+                <form action="/logout" method="post" class="w-full">
+                    <button type="submit" class="w-full flex items-center justify-between p-3 hover:bg-red-50 rounded-lg transition-colors text-left">
+                        <div class="flex items-center">
+                            <span class="text-xl mr-3">🚪</span>
+                            <span class="font-medium text-red-600">退出登录</span>
+                        </div>
+                        <span class="text-gray-400">›</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Change Password Form -->
+        <div id="passwordForm" class="bg-white rounded-xl shadow-md p-6 hidden">
+            <h2 class="text-xl font-bold text-gray-800 mb-4">修改密码</h2>
+            <form action="/change-password" method="post" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1 text-sm">当前密码</label>
+                    <input type="password" name="oldPassword" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1 text-sm">新密码</label>
+                    <input type="password" name="newPassword" required minlength="6" placeholder="至少6位" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
+                </div>
+                <div>
+                    <label class="block text-gray-700 font-medium mb-1 text-sm">确认新密码</label>
+                    <input type="password" name="confirmPassword" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
+                </div>
+                <div class="flex space-x-4">
+                    <button type="submit" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-lg transition-colors">确认修改</button>
+                    <button type="button" onclick="togglePassword()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2.5 rounded-lg transition-colors">取消</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleEdit() {
+        document.getElementById('displayMode').classList.toggle('hidden');
+        document.getElementById('editMode').classList.toggle('hidden');
+        document.getElementById('editBtn').classList.toggle('hidden');
+    }
+    function togglePassword() {
+        document.getElementById('passwordForm').classList.toggle('hidden');
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

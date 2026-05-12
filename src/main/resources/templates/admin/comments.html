@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>评论管理 - 管理后台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: '#ea580c', accent: '#f97316', muted: '#f5f5f5', 'muted-foreground': '#737373', border: '#e5e5e5' }}}
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Nav -->
+<nav class="bg-white shadow-sm border-b border-border sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4">
+        <div class="flex justify-between items-center h-14">
+            <a class="text-xl font-bold text-primary" href="/">&#127869; 美食打卡</a>
+            <div class="flex items-center gap-4 text-sm">
+                <span class="text-gray-400">管理后台</span>
+                <a href="/" class="text-gray-500 hover:text-primary">首页</a>
+                <a href="/posts" class="text-gray-500 hover:text-primary">社区</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-5xl mx-auto px-4 py-6">
+
+    <div class="flex gap-6">
+
+        <!-- Sidebar -->
+        <div class="w-48 shrink-0">
+            <div class="bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+                <a th:href="@{/admin/posts(status='pending')}"
+                   class="flex items-center justify-between px-4 py-3 text-sm border-b border-border hover:bg-gray-50 text-gray-700">
+                    <span>&#128203; 帖子审核</span>
+                    <span th:if="${pendingCount > 0}" class="bg-red-500 text-white text-xs px-1.5 py-0.5 rounded-full"
+                          th:text="${pendingCount}">0</span>
+                </a>
+                <a th:href="@{/admin/posts(status='all')}"
+                   class="block px-4 py-3 text-sm border-b border-border hover:bg-gray-50 text-gray-700">
+                    &#128220; 全部帖子
+                </a>
+                <a th:href="@{/admin/comments}"
+                   class="block px-4 py-3 text-sm hover:bg-gray-50 bg-orange-50 text-primary font-semibold border-b border-border">
+                    &#128172; 评论管理
+                </a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 min-w-0">
+
+            <!-- Header -->
+            <div class="bg-white rounded-xl shadow-sm border border-border mb-4 p-4">
+                <h2 class="font-bold text-gray-900">评论管理</h2>
+                <p class="text-xs text-gray-400 mt-1">共 <span th:text="${totalComments}">0</span> 条评论，评论发布无需审核，管理员可直接删除违规评论</p>
+            </div>
+
+            <!-- Comment List -->
+            <div th:if="${#lists.isEmpty(comments)}" class="text-center py-16 bg-white rounded-xl shadow-sm border border-border">
+                <div class="text-5xl mb-4">&#128172;</div>
+                <p class="text-gray-400 text-lg">暂无评论</p>
+            </div>
+
+            <div th:each="c : ${comments}" class="bg-white rounded-xl shadow-sm border border-border mb-3 overflow-hidden">
+                <div class="flex items-start gap-3 px-5 py-4">
+                    <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 mt-0.5"
+                         th:text="${c.author.name != null ? c.author.name.charAt(0) : c.author.username.charAt(0)}">U</div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="text-sm font-semibold text-gray-800"
+                                  th:text="${c.author.name != null ? c.author.name : c.author.username}">用户</span>
+                            <span class="text-xs text-gray-400"
+                                  th:text="${#temporals.format(c.createdAt, 'yyyy-MM-dd HH:mm')}">时间</span>
+                            <span class="text-xs text-gray-300">|</span>
+                            <a th:href="@{/post/{id}(id=${c.post.id})}" class="text-xs text-primary hover:underline"
+                               target="_blank" th:text="${c.post.title}">帖子标题</a>
+                        </div>
+                        <p class="text-sm text-gray-700" th:text="${c.content}">评论内容</p>
+                    </div>
+                    <form method="post"
+                          th:action="@{/admin/comment/{id}/delete(id=${c.id})}"
+                          onsubmit="return confirm('确定删除该评论吗？')">
+                        <input type="hidden" name="page" th:value="${currentPage}"/>
+                        <button type="submit" class="text-xs text-gray-400 hover:text-red-500 transition-colors shrink-0">
+                            &#128465; 删除
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <div th:if="${hasMore}" class="flex justify-center mt-6">
+                <a th:href="@{/admin/comments(page=${currentPage + 1})}"
+                   class="px-6 py-2 bg-white border border-border rounded-lg text-sm hover:bg-gray-50">加载更多</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

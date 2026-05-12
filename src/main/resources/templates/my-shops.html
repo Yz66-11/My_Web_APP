@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>我的店铺 - 美食评价系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+<!-- Navigation -->
+<nav class="bg-white shadow-lg border-b-4 border-orange-500">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center py-4">
+            <a class="text-2xl font-bold text-orange-600 flex items-center" href="/">
+                🍽️ 美食评价系统
+            </a>
+            <div class="flex items-center space-x-4">
+                <a href="/" class="text-gray-600 hover:text-orange-600 transition-colors">首页</a>
+                <a href="/profile" class="text-gray-600 hover:text-orange-600 transition-colors">我的</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="bg-gradient-to-r from-orange-500 to-red-500 text-white py-12">
+    <div class="container mx-auto px-4">
+        <h1 class="text-4xl font-bold mb-2">我的店铺</h1>
+        <p class="text-lg opacity-90">管理您申请入驻的店铺</p>
+    </div>
+</div>
+
+<div class="container mx-auto px-4 py-12">
+    <div class="max-w-4xl mx-auto">
+        <div class="flex justify-between items-center mb-6">
+            <h2 class="text-xl font-bold text-gray-800">店铺列表</h2>
+            <a href="/shop/apply" class="bg-orange-500 hover:bg-orange-600 text-white px-6 py-2.5 rounded-lg font-medium transition-colors">
+                + 申请新店铺
+            </a>
+        </div>
+
+        <div th:if="${#lists.isEmpty(shops)}" class="text-center py-16">
+            <div class="text-6xl mb-4">🏪</div>
+            <h3 class="text-2xl font-bold text-gray-800 mb-2">暂无店铺</h3>
+            <p class="text-gray-600 mb-6">您还没有申请入驻商家</p>
+            <a href="/shop/apply" class="inline-block bg-orange-500 hover:bg-orange-600 text-white px-8 py-3 rounded-lg font-semibold transition-colors">
+                立即入驻
+            </a>
+        </div>
+
+        <div class="space-y-4" th:each="shop : ${shops}">
+            <div class="bg-white rounded-xl shadow-md p-6">
+                <div class="flex items-start justify-between">
+                    <div class="flex-1">
+                        <div class="flex items-center space-x-3 mb-2">
+                            <h3 class="text-xl font-bold text-gray-800" th:text="${shop.shopName}">店铺名称</h3>
+                            <span th:if="${shop.status.name() == 'PENDING'}" class="bg-yellow-100 text-yellow-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">待审核</span>
+                            <span th:if="${shop.status.name() == 'APPROVED'}" class="bg-green-100 text-green-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">已通过</span>
+                            <span th:if="${shop.status.name() == 'REJECTED'}" class="bg-red-100 text-red-700 text-xs font-semibold px-2.5 py-0.5 rounded-full">已拒绝</span>
+                        </div>
+                        <p class="text-gray-600 text-sm mb-1">
+                            <span class="mr-1">📍</span>
+                            <span th:text="${shop.location}">-</span>
+                        </p>
+                        <p class="text-gray-600 text-sm mb-1">
+                            <span class="mr-1">📞</span>
+                            <span th:text="${shop.phone}">-</span>
+                        </p>
+                        <p class="text-gray-600 text-sm mb-1">
+                            <span class="mr-1">🕐</span>
+                            <span th:text="${shop.startTime + ' - ' + shop.endTime}">-</span>
+                        </p>
+                        <p class="text-gray-500 text-sm mt-2" th:text="${shop.introduction}">-</p>
+                    </div>
+                    <a th:if="${shop.status.name() == 'APPROVED'}"
+                       th:href="@{/merchant/{id}(id=${shop.id})}"
+                       class="ml-4 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm transition-colors flex-shrink-0">
+                        查看详情
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

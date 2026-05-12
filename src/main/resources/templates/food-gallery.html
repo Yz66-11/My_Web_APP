@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>美食图鉴 - 美食打卡</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#ea580c',
+                        'primary-foreground': '#ffffff',
+                        background: '#fefefe',
+                        foreground: '#0a0a0a',
+                        card: '#ffffff',
+                        'card-foreground': '#0a0a0a',
+                        muted: '#f5f5f5',
+                        'muted-foreground': '#737373',
+                        border: '#e5e5e5',
+                        accent: '#f97316',
+                        destructive: '#dc2626'
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .food-item { transition: all 0.3s ease; }
+        .food-item:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.1); }
+        .locked-card { filter: grayscale(100%) brightness(0.75); }
+        .progress-bar { transition: width 0.5s ease; }
+        .breadcrumb-link { color: #ea580c; text-decoration: none; }
+        .breadcrumb-link:hover { text-decoration: underline; }
+        .toast { animation: slideIn 0.3s ease, fadeOut 0.3s ease 2.7s forwards; }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+    </style>
+</head>
+<body class="min-h-screen bg-muted">
+
+<!-- Navigation -->
+<nav class="bg-white shadow-sm border-b border-border sticky top-0 z-50">
+    <div class="container mx-auto px-4">
+        <div class="flex justify-between items-center h-14">
+            <a class="text-xl font-bold text-primary flex items-center gap-2" href="/">
+                <span class="text-2xl">&#127869;</span> 美食打卡
+            </a>
+            <div class="flex items-center gap-6 text-sm">
+                <a href="/" class="text-muted-foreground hover:text-primary transition-colors">首页</a>
+                <a href="/merchants" class="text-muted-foreground hover:text-primary transition-colors">商家</a>
+                <a href="/food-gallery" class="text-primary font-semibold">图鉴</a>
+                <a href="/checkin" class="text-muted-foreground hover:text-primary transition-colors">打卡</a>
+                <a href="/profile" class="text-muted-foreground hover:text-primary transition-colors">我的</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Toast Messages -->
+<div th:if="${success}" class="fixed top-4 right-4 z-50 toast">
+    <div class="bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg" th:text="${success}"></div>
+</div>
+<div th:if="${info}" class="fixed top-4 right-4 z-50 toast">
+    <div class="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg" th:text="${info}"></div>
+</div>
+<div th:if="${error}" class="fixed top-4 right-4 z-50 toast">
+    <div class="bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg" th:text="${error}"></div>
+</div>
+
+<!-- Page Header -->
+<div class="bg-gradient-to-r from-orange-500 via-red-500 to-pink-500 text-white py-10">
+    <div class="container mx-auto px-4">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+                <h1 class="text-3xl font-bold mb-1">&#128218; 美食图鉴</h1>
+                <div class="text-white/80 text-sm">
+                    <span th:text="${breadcrumb}">全部城市</span>
+                </div>
+            </div>
+            <!-- Global Progress -->
+            <div class="bg-white/20 backdrop-blur rounded-xl px-6 py-3 flex items-center gap-4" th:if="${stats}">
+                <div class="text-center">
+                    <div class="text-3xl font-bold" th:text="${stats.unlockedDishes}">0</div>
+                    <div class="text-xs text-white/80">已解锁</div>
+                </div>
+                <div class="w-32">
+                    <div class="text-xs text-white/80 mb-1 text-right">
+                        <span th:text="${#numbers.formatDecimal(stats.progress, 1, 1)}">0.0</span>%
+                    </div>
+                    <div class="bg-white/30 rounded-full h-2.5">
+                        <div class="bg-white h-2.5 rounded-full progress-bar"
+                             th:style="'width:' + ${stats.progress} + '%'"></div>
+                    </div>
+                </div>
+                <div class="text-center">
+                    <div class="text-3xl font-bold" th:text="${stats.totalDishes}">0</div>
+                    <div class="text-xs text-white/80">总计</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter Bar -->
+<div class="bg-white border-b border-border">
+    <div class="container mx-auto px-4 py-3">
+        <form method="get" action="/food-gallery" class="flex flex-col sm:flex-row gap-3">
+            <div class="flex-1 relative">
+                <svg class="absolute left-3 top-2.5 h-5 w-5 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                <input type="text" name="keyword" placeholder="搜索城市、区域、店铺、菜品..."
+                       th:value="${keyword}" class="w-full pl-10 pr-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm"/>
+            </div>
+            <div class="flex gap-2">
+                <a th:href="@{/food-gallery}" class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-medium hover:bg-accent transition-colors text-center whitespace-nowrap">
+                    &#127759; 全部
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Content -->
+<div class="container mx-auto px-4 py-8">
+
+    <!-- ==================== SEARCH RESULTS ==================== -->
+    <div th:if="${isSearch}">
+        <div th:if="${#lists.isEmpty(searchResults)}" class="text-center py-16">
+            <div class="text-6xl mb-4">&#128269;</div>
+            <p class="text-muted-foreground text-lg">未找到相关结果</p>
+            <a href="/food-gallery" class="inline-block mt-4 text-primary hover:underline">返回图鉴</a>
+        </div>
+        <div th:each="result : ${searchResults}" class="mb-8">
+            <div class="flex items-center gap-3 mb-4">
+                <h3 class="text-lg font-bold text-foreground" th:text="${result.shop.shopName}">店铺名</h3>
+                <span class="text-xs bg-orange-100 text-primary px-2 py-0.5 rounded-full" th:text="${result.shop.category}">分类</span>
+                <span class="text-xs text-muted-foreground" th:text="${result.shop.city} + ' ' + ${result.shop.district}">地址</span>
+                <a th:href="@{/food-gallery(shopId=${result.shop.id},city=${result.shop.city},district=${result.shop.district})}"
+                   class="text-xs text-primary hover:underline ml-auto">查看全部 &rarr;</a>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                <div th:each="dv : ${result.dishes}" class="food-item bg-white rounded-xl shadow-sm overflow-hidden border border-border"
+                     th:classappend="${!dv.unlocked} ? 'locked-card'">
+                    <div class="h-24 bg-gradient-to-br from-orange-100 to-orange-200 flex items-center justify-center relative">
+                        <span class="text-4xl" th:text="${#strings.isEmpty(dv.dish.imageUrl)} ? '&#127860;' : ''">&#127860;</span>
+                        <div th:if="${!dv.unlocked}" class="absolute inset-0 flex items-center justify-center bg-black/30 rounded-t-xl">
+                            <span class="text-3xl">&#128274;</span>
+                        </div>
+                    </div>
+                    <div class="p-3 text-center">
+                        <p class="text-sm font-medium text-foreground truncate" th:text="${dv.dish.dishName}">菜品名</p>
+                        <p class="text-xs mt-1" th:class="${dv.unlocked} ? 'text-green-600' : 'text-muted-foreground'"
+                           th:text="${dv.unlocked} ? '已解锁' : '未解锁'">状态</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== CITY LEVEL ==================== -->
+    <div th:if="${!isSearch and level == 'city'}">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div th:each="city : ${cities}" class="food-item bg-white rounded-xl shadow-sm border border-border overflow-hidden cursor-pointer">
+                <a th:href="@{/food-gallery(city=${city.name})}" class="block">
+                    <div class="h-32 bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center">
+                        <span class="text-5xl" th:attr="data-city=${city.name}" class-city="">&#127981;</span>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-xl font-bold text-foreground mb-1" th:text="${city.name}">城市</h3>
+                        <div class="flex gap-4 text-xs text-muted-foreground mb-3">
+                            <span th:text="${city.districtCount} + '个区域'">0个区域</span>
+                            <span th:text="${city.shopCount} + '家店铺'">0家店铺</span>
+                            <span th:text="${city.totalDishes} + '道菜品'">0道菜品</span>
+                        </div>
+                        <!-- Progress -->
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 bg-muted rounded-full h-2">
+                                <div class="bg-gradient-to-r from-orange-400 to-red-400 h-2 rounded-full progress-bar"
+                                     th:style="'width:' + ${city.progress} + '%'"></div>
+                            </div>
+                            <span class="text-xs font-semibold text-primary whitespace-nowrap"
+                                  th:text="${#numbers.formatDecimal(city.progress, 1, 1)} + '%'">0.0%</span>
+                        </div>
+                        <div class="text-xs text-muted-foreground mt-1.5">
+                            已探索 <span class="text-primary font-medium" th:text="${city.unlockedDishes}">0</span>
+                            / <span th:text="${city.totalDishes}">0</span> 道菜品
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(cities)}" class="text-center py-16">
+            <div class="text-6xl mb-4">&#127961;</div>
+            <p class="text-muted-foreground text-lg">暂无城市数据</p>
+        </div>
+    </div>
+
+    <!-- ==================== DISTRICT LEVEL ==================== -->
+    <div th:if="${!isSearch and level == 'district'}">
+        <div class="flex items-center gap-2 text-sm mb-6 text-muted-foreground">
+            <a href="/food-gallery" class="breadcrumb-link hover:underline">&#127759; 全部城市</a>
+            <span>/</span>
+            <span class="text-foreground font-medium" th:text="${districtPage.city}">城市</span>
+        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div th:each="dist : ${districtPage.districts}" class="food-item bg-white rounded-xl shadow-sm border border-border overflow-hidden cursor-pointer">
+                <a th:href="@{/food-gallery(city=${districtPage.city},district=${dist.name})}" class="block">
+                    <div class="h-28 bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center">
+                        <span class="text-5xl">&#128205;</span>
+                    </div>
+                    <div class="p-5">
+                        <h3 class="text-xl font-bold text-foreground mb-1" th:text="${dist.name}">区域</h3>
+                        <div class="flex gap-4 text-xs text-muted-foreground mb-3">
+                            <span th:text="${dist.shopCount} + '家店铺'">0家店铺</span>
+                            <span th:text="${dist.totalDishes} + '道菜品'">0道菜品</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 bg-muted rounded-full h-2">
+                                <div class="bg-gradient-to-r from-teal-400 to-emerald-400 h-2 rounded-full progress-bar"
+                                     th:style="'width:' + ${dist.progress} + '%'"></div>
+                            </div>
+                            <span class="text-xs font-semibold text-teal-600 whitespace-nowrap"
+                                  th:text="${#numbers.formatDecimal(dist.progress, 1, 1)} + '%'">0.0%</span>
+                        </div>
+                        <div class="text-xs text-muted-foreground mt-1.5">
+                            已探索 <span class="text-teal-600 font-medium" th:text="${dist.unlockedDishes}">0</span>
+                            / <span th:text="${dist.totalDishes}">0</span> 道菜品
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(districtPage.districts)}" class="text-center py-16">
+            <div class="text-6xl mb-4">&#128506;</div>
+            <p class="text-muted-foreground text-lg">该城市暂无区域数据</p>
+        </div>
+    </div>
+
+    <!-- ==================== SHOP LEVEL ==================== -->
+    <div th:if="${!isSearch and level == 'shop'}">
+        <div class="flex items-center gap-2 text-sm mb-6 text-muted-foreground">
+            <a href="/food-gallery" class="breadcrumb-link hover:underline">&#127759; 全部城市</a>
+            <span>/</span>
+            <a th:href="@{/food-gallery(city=${city})}" class="breadcrumb-link hover:underline" th:text="${city}">城市</a>
+            <span>/</span>
+            <span class="text-foreground font-medium" th:text="${district}">区域</span>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div th:each="sv : ${shopPage.shops}" class="food-item bg-white rounded-xl shadow-sm border border-border overflow-hidden">
+                <a th:href="@{/food-gallery(shopId=${sv.shop.id},city=${city},district=${district})}" class="block">
+                    <div class="flex">
+                        <div class="w-32 h-32 bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center shrink-0">
+                            <span class="text-4xl">&#127978;</span>
+                        </div>
+                        <div class="p-4 flex-1 min-w-0">
+                            <div class="flex items-start justify-between gap-2 mb-1">
+                                <h3 class="text-lg font-bold text-foreground truncate" th:text="${sv.shop.shopName}">店铺名</h3>
+                                <span class="text-xs bg-orange-100 text-primary px-2 py-0.5 rounded-full shrink-0" th:text="${sv.shop.category}">分类</span>
+                            </div>
+                            <p class="text-xs text-muted-foreground mb-2 line-clamp-2" th:text="${sv.shop.introduction}">简介</p>
+                            <div class="text-xs text-muted-foreground mb-2">
+                                &#128205; <span th:text="${sv.shop.location}">地址</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1 bg-muted rounded-full h-1.5">
+                                    <div class="bg-gradient-to-r from-amber-400 to-orange-400 h-1.5 rounded-full progress-bar"
+                                         th:style="'width:' + ${sv.progress} + '%'"></div>
+                                </div>
+                                <span class="text-xs font-semibold text-amber-600 whitespace-nowrap"
+                                      th:text="${sv.unlockedDishes} + '/' + ${sv.totalDishes}">0/0</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(shopPage.shops)}" class="text-center py-16">
+            <div class="text-6xl mb-4">&#128205;</div>
+            <p class="text-muted-foreground text-lg">该区域暂无店铺</p>
+        </div>
+    </div>
+
+    <!-- ==================== DISH LEVEL ==================== -->
+    <div th:if="${!isSearch and level == 'dish'}">
+        <div class="flex items-center gap-2 text-sm mb-6 text-muted-foreground">
+            <a href="/food-gallery" class="breadcrumb-link hover:underline">&#127759; 全部城市</a>
+            <span>/</span>
+            <a th:href="@{/food-gallery(city=${city})}" class="breadcrumb-link hover:underline" th:text="${city}">城市</a>
+            <span>/</span>
+            <a th:href="@{/food-gallery(city=${city},district=${district})}" class="breadcrumb-link hover:underline" th:text="${district}">区域</a>
+            <span>/</span>
+            <span class="text-foreground font-medium" th:text="${dishPage.shop.shopName}">店铺</span>
+        </div>
+
+        <!-- Shop Info Card -->
+        <div class="bg-white rounded-xl shadow-sm border border-border p-6 mb-8">
+            <div class="flex flex-col md:flex-row gap-6">
+                <div class="w-full md:w-48 h-36 bg-gradient-to-br from-amber-100 to-orange-200 rounded-lg flex items-center justify-center shrink-0">
+                    <span class="text-6xl">&#127978;</span>
+                </div>
+                <div class="flex-1">
+                    <h2 class="text-2xl font-bold text-foreground mb-2" th:text="${dishPage.shop.shopName}">店铺名</h2>
+                    <p class="text-sm text-muted-foreground mb-3" th:text="${dishPage.shop.introduction}">店铺简介</p>
+                    <div class="flex flex-wrap gap-4 text-sm text-muted-foreground">
+                        <span>&#127968; <span th:text="${dishPage.shop.city} + ' ' + ${dishPage.shop.district}">地址</span></span>
+                        <span>&#128205; <span th:text="${dishPage.shop.location}">详细地址</span></span>
+                        <span>&#128222; <span th:text="${dishPage.shop.phone}">电话</span></span>
+                        <span>&#128336; <span th:text="${dishPage.shop.startTime} + '-' + ${dishPage.shop.endTime}">营业时间</span></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dish Grid -->
+        <h3 class="text-lg font-bold text-foreground mb-4">&#127858; 菜品列表</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+            <div th:each="dv : ${dishPage.dishes}"
+                 class="food-item bg-white rounded-xl shadow-sm overflow-hidden border border-border"
+                 th:classappend="${!dv.unlocked} ? 'locked-card'">
+                <!-- Unlocked dish -->
+                <div th:if="${dv.unlocked}">
+                    <div class="h-28 bg-gradient-to-br from-yellow-100 via-orange-100 to-red-100 flex items-center justify-center">
+                        <span class="text-5xl">&#127858;</span>
+                    </div>
+                    <div class="p-3 text-center">
+                        <p class="text-sm font-bold text-foreground truncate" th:text="${dv.dish.dishName}">菜品名</p>
+                        <p class="text-xs text-primary mt-1" th:text="'&#165;' + ${dv.dish.price}">价格</p>
+                        <p class="text-xs text-green-600 mt-1">&#9989; 已解锁</p>
+                    </div>
+                </div>
+                <!-- Locked dish -->
+                <div th:unless="${dv.unlocked}">
+                    <div class="h-28 bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center relative">
+                        <span class="text-5xl opacity-40">&#127858;</span>
+                        <div class="absolute inset-0 flex items-center justify-center bg-black/20 rounded-t-xl">
+                            <span class="text-3xl">&#128274;</span>
+                        </div>
+                    </div>
+                    <div class="p-3 text-center">
+                        <p class="text-sm font-medium text-muted-foreground truncate" th:text="${dv.dish.dishName}">菜品名</p>
+                        <form method="post" th:action="@{/food-gallery/unlock}" class="mt-2">
+                            <input type="hidden" name="dishId" th:value="${dv.dish.id}"/>
+                            <input type="hidden" name="shopId" th:value="${dishPage.shop.id}"/>
+                            <input type="hidden" name="city" th:value="${city}"/>
+                            <input type="hidden" name="district" th:value="${district}"/>
+                            <button type="submit" class="w-full text-xs bg-primary hover:bg-accent text-white py-1.5 rounded-lg transition-colors">
+                                &#128275; 解锁
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div th:if="${#lists.isEmpty(dishPage.dishes)}" class="text-center py-16">
+            <div class="text-6xl mb-4">&#127858;</div>
+            <p class="text-muted-foreground text-lg">该店铺暂无菜品</p>
+        </div>
+    </div>
+
+</div>
+
+<!-- Footer -->
+<footer class="bg-white border-t border-border py-6 mt-12">
+    <div class="container mx-auto px-4 text-center text-sm text-muted-foreground">
+        &copy; 2026 美食打卡点评系统
+    </div>
+</footer>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const map = {'北京': '\u{1F3D9}', '上海': '\u{1F3E0}', '广州': '\u{1F3EF}', '深圳': '\u{1F3D6}',
+                      '成都': '\u{1F377}', '重庆': '\u{1F35B}', '杭州': '\u{1F3D3}', '西安': '\u{1F3F7}'};
+        document.querySelectorAll('[data-city]').forEach(function(el) {
+            const city = el.getAttribute('data-city');
+            if (map[city]) el.textContent = map[city];
+        });
+    });
+</script>
+</body>
+</html>
