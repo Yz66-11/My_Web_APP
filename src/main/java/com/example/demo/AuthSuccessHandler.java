@@ -20,7 +20,7 @@ public class AuthSuccessHandler implements AuthenticationSuccessHandler {
                 .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
         if (isAdmin) {
-            response.sendRedirect("/admin/dashboard");
+            response.sendRedirect("/admin");
         } else {
             response.sendRedirect("/");
         }

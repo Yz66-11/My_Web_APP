@@ -14,15 +14,56 @@ public class AdminController {
 
     private final PostService postService;
     private final UserService userService;
+    private final ShopService shopService;
 
-    public AdminController(PostService postService, UserService userService) {
+    public AdminController(PostService postService, UserService userService, ShopService shopService) {
         this.postService = postService;
         this.userService = userService;
+        this.shopService = shopService;
     }
 
-    private Long getUserId(Principal principal) {
-        if (principal == null) return null;
-        return userService.findByUsername(principal.getName()).map(User::getId).orElse(null);
+    // ==================== Dashboard ====================
+
+    @GetMapping({"", "/dashboard"})
+    public String dashboard(Model model) {
+        model.addAttribute("totalUsers", userService.countUsers());
+        model.addAttribute("approvedShopCount", shopService.countApproved());
+        model.addAttribute("pendingShopCount", shopService.countPending());
+        model.addAttribute("pendingShops", shopService.getPendingShops());
+        model.addAttribute("users", userService.getAllUsers());
+        model.addAttribute("pendingCount", postService.countPendingPosts());
+        return "admin/dashboard";
+    }
+
+    // ==================== Shop Review ====================
+
+    @PostMapping("/shops/{id}/approve")
+    public String approveShop(@PathVariable Long id) {
+        shopService.approveShop(id);
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/shops/{id}/reject")
+    public String rejectShop(@PathVariable Long id) {
+        shopService.rejectShop(id);
+        return "redirect:/admin";
+    }
+
+    // ==================== User Management ====================
+
+    @PostMapping("/users/{id}/toggle-role")
+    public String toggleUserRole(@PathVariable Long id) {
+        User user = userService.findById(id).orElse(null);
+        if (user != null) {
+            userService.changeRole(id, user.getRole() == User.Role.USER ? User.Role.ADMIN : User.Role.USER);
+        }
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/users/{id}/delete")
+    public String deleteUser(@PathVariable Long id) {
+        userService.deleteUser(id);
+        return "redirect:/admin";
     }
 
     // ==================== Post Review ====================
