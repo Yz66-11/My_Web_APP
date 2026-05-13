@@ -76,14 +76,14 @@
         <!-- Author -->
         <div class="flex items-center px-4 pt-4 pb-2">
             <div class="w-9 h-9 bg-gradient-to-br from-orange-400 to-red-400 rounded-full flex items-center justify-center text-white font-bold text-sm"
-                 th:text="${pv.authorName.charAt(0)}">U</div>
+                 th:text="${#strings.defaultString(#strings.substring(pv.authorName, 0, 1), 'U')}">U</div>
             <div class="ml-3">
-                <span class="text-sm font-semibold text-gray-800" th:text="${pv.authorName}">用户名</span>
-                <span class="text-xs text-gray-400 ml-2" th:text="${#temporals.format(pv.post.createdAt, 'MM-dd HH:mm')}">时间</span>
+                <span class="text-sm font-semibold text-gray-800" th:text="${pv.authorName != null ? pv.authorName : '用户'}">用户名</span>
+                <span th:if="${pv.post.createdAt != null}" class="text-xs text-gray-400 ml-2" th:text="${#temporals.format(pv.post.createdAt, 'MM-dd HH:mm')}">时间</span>
             </div>
             <!-- Status badge for my posts -->
-            <span th:if="${isMyPosts and pv.post.status != null and pv.post.status.name() == 'PENDING'}" class="ml-auto text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-medium">待审核</span>
-            <span th:if="${isMyPosts and pv.post.status != null and pv.post.status.name() == 'REJECTED'}" class="ml-auto text-xs bg-red-100 text-red-600 px-2.5 py-1 rounded-full font-medium">未通过</span>
+            <span th:if="${isMyPosts != null and isMyPosts and pv.post.status != null and pv.post.status.name() == 'PENDING'}" class="ml-auto text-xs bg-yellow-100 text-yellow-700 px-2.5 py-1 rounded-full font-medium">待审核</span>
+            <span th:if="${isMyPosts != null and isMyPosts and pv.post.status != null and pv.post.status.name() == 'REJECTED'}" class="ml-auto text-xs bg-red-100 text-red-600 px-2.5 py-1 rounded-full font-medium">未通过</span>
         </div>
 
         <!-- Content -->
@@ -93,7 +93,7 @@
         </a>
 
         <!-- Images -->
-        <div th:if="${!#lists.isEmpty(pv.imageList)}" class="px-4 pb-3">
+        <div th:if="${pv.imageList != null and !pv.imageList.isEmpty()}" class="px-4 pb-3">
             <div class="grid gap-2" th:classappend="${pv.imageList.size() == 1} ? 'grid-cols-1' : (${pv.imageList.size() == 2 || pv.imageList.size() == 4} ? 'grid-cols-2' : 'grid-cols-3')">
                 <div th:each="img : ${pv.imageList}" class="aspect-square bg-gradient-to-br from-orange-50 to-orange-100 rounded-lg flex items-center justify-center overflow-hidden">
                     <span class="text-4xl opacity-60">&#128247;</span>
@@ -102,7 +102,7 @@
         </div>
 
         <!-- Location -->
-        <div th:if="${pv.post.location}" class="px-4 pb-2">
+        <div th:if="${pv.post.location != null and !pv.post.location.isEmpty()}" class="px-4 pb-2">
             <span class="text-xs text-gray-400">&#128205; <span th:text="${pv.post.location}">地点</span></span>
         </div>
 
@@ -136,11 +136,11 @@
 
     <!-- Pagination -->
     <div th:if="${totalPages != null and totalPages > 1}" class="flex justify-center gap-2 mt-6">
-        <a th:href="@{/posts(page=${currentPage - 1}, keyword=${keyword})}"
+        <a th:href="@{/posts(page=${currentPage - 1}, keyword=${keyword != null ? keyword : ''})}"
            th:classappend="${!hasPrev} ? 'pointer-events-none opacity-40' : ''"
            class="px-4 py-2 bg-white border border-border rounded-lg text-sm hover:bg-gray-50">&laquo; 上一页</a>
         <span class="px-4 py-2 text-sm text-gray-500" th:text="${currentPage + 1} + '/' + ${totalPages}">1/1</span>
-        <a th:href="@{/posts(page=${currentPage + 1}, keyword=${keyword})}"
+        <a th:href="@{/posts(page=${currentPage + 1}, keyword=${keyword != null ? keyword : ''})}"
            th:classappend="${!hasNext} ? 'pointer-events-none opacity-40' : ''"
            class="px-4 py-2 bg-white border border-border rounded-lg text-sm hover:bg-gray-50">下一页 &raquo;</a>
     </div>

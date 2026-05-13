@@ -31,10 +31,10 @@
         <div class="flex items-center justify-between px-5 pt-5 pb-3">
             <div class="flex items-center gap-3">
                 <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-400 rounded-full flex items-center justify-center text-white font-bold"
-                     th:text="${post.author.name != null ? post.author.name.charAt(0) : post.author.username.charAt(0)}">U</div>
+                     th:text="${post.author.name != null and !post.author.name.isEmpty()} ? post.author.name.substring(0,1) : post.author.username.substring(0,1)">U</div>
                 <div>
                     <span class="text-sm font-semibold text-gray-900" th:text="${post.author.name != null ? post.author.name : post.author.username}">用户</span>
-                    <div class="text-xs text-gray-400" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">时间</div>
+                    <div th:if="${post.createdAt != null}" class="text-xs text-gray-400" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">时间</div>
                 </div>
             </div>
             <form th:if="${currentUserId != null and currentUserId == post.author.id}" method="post"
@@ -119,11 +119,11 @@
         </div>
         <div th:each="c : ${comments}" class="flex gap-3 px-5 py-4 border-b border-border last:border-b-0">
             <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
-                 th:text="${c.author.name != null ? c.author.name.charAt(0) : c.author.username.charAt(0)}">U</div>
+                 th:text="${c.author.name != null and !c.author.name.isEmpty()} ? c.author.name.substring(0,1) : c.author.username.substring(0,1)">U</div>
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
                     <span class="text-sm font-semibold text-gray-800" th:text="${c.author.name != null ? c.author.name : c.author.username}">用户</span>
-                    <span class="text-xs text-gray-400" th:text="${#temporals.format(c.createdAt, 'MM-dd HH:mm')}">时间</span>
+                    <span th:if="${c.createdAt != null}" class="text-xs text-gray-400" th:text="${#temporals.format(c.createdAt, 'MM-dd HH:mm')}">时间</span>
                 </div>
                 <p class="text-sm text-gray-700" th:text="${c.content}">评论内容</p>
             </div>

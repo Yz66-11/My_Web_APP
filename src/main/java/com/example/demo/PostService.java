@@ -281,7 +281,9 @@ public class PostService {
         public boolean isFavorited() { return favorited; }
 
         public String getAuthorName() {
-            return post.getAuthor().getName() != null ? post.getAuthor().getName() : post.getAuthor().getUsername();
+            if (post.getAuthor() == null) return "未知";
+            String name = post.getAuthor().getName();
+            return (name != null && !name.isEmpty()) ? name : post.getAuthor().getUsername();
         }
 
         public String getPreviewContent() {

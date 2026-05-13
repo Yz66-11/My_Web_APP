@@ -2,6 +2,7 @@ package com.example.demo;
 
 import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
@@ -27,6 +28,7 @@ public class PostController {
     }
 
     @GetMapping("/posts")
+    @Transactional(readOnly = true)
     public String showPosts(
             @RequestParam(value = "keyword", required = false) String keyword,
             @RequestParam(value = "tab", required = false) String tab,
