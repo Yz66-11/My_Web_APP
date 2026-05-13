@@ -31,11 +31,14 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(authz -> authz
                         .requestMatchers("/", "/index.html", "/login", "/register",
+                                "/forgot-password", "/ott/sent", "/verify-token",
+                                "/reset-password",
                                 "/css/**", "/js/**", "/images/**", "/h2-console/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/merchants", "/merchant/**", "/profile",
                                 "/food-gallery", "/food-gallery/**", "/checkin", "/shop/**", "/my-shops",
-                                "/posts", "/post/**", "/update-profile", "/change-password").authenticated()
+                                "/posts", "/post/**", "/update-profile", "/change-password"
+                                ).authenticated()
                         .anyRequest().authenticated()
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))

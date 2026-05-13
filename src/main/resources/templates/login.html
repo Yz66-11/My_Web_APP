@@ -10,118 +10,134 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#ea580c',
-                        'primary-foreground': '#ffffff',
-                        background: '#fefefe',
-                        foreground: '#0a0a0a',
-                        card: '#ffffff',
-                        'card-foreground': '#0a0a0a',
-                        muted: '#f5f5f5',
-                        'muted-foreground': '#737373',
-                        border: '#e5e5e5',
-                        accent: '#f97316',
-                        destructive: '#dc2626'
-                    }
+                        primary: '#F97316', 'primary-dark': '#EA580C', 'primary-light': '#FDBA74',
+                        accent: '#FBBF24', 'accent-light': '#FDE68A',
+                        'bg-warm': '#FFFAF5',
+                        'warm-50': '#FFFAF5', 'warm-100': '#FFF3E0', 'warm-200': '#FFE0B2',
+                    },
+                    fontFamily: { sans: ['Noto Sans SC', 'sans-serif'] }
                 }
             }
         }
     </script>
+    <link rel="stylesheet" href="/css/common.css">
 </head>
-<body class="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 flex items-center justify-center p-4">
-<div class="w-full max-w-md">
-    <!-- Header -->
-    <div class="text-center mb-8">
-        <div class="inline-flex items-center justify-center w-16 h-16 bg-primary rounded-full mb-4">
-            <svg class="w-8 h-8 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 16.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
-            </svg>
-        </div>
-        <h1 class="text-3xl font-bold text-foreground mb-2">美食打卡</h1>
-        <p class="text-muted-foreground">发现美食，分享体验</p>
-    </div>
+<body class="min-h-screen bg-warm relative overflow-hidden">
+    <!-- Decorative blobs -->
+    <div class="deco-blob w-72 h-72 bg-orange-300 -top-20 -left-20 animate-float"></div>
+    <div class="deco-blob w-96 h-96 bg-amber-300 -bottom-32 -right-32 animate-float-alt"></div>
+    <div class="deco-blob w-64 h-64 bg-rose-200 top-1/2 left-1/3 animate-float"></div>
 
-    <!-- Login Card -->
-    <div class="bg-card border border-border rounded-lg shadow-sm">
-        <div class="p-6 pb-4">
-            <h2 class="text-2xl font-bold text-center text-card-foreground mb-1">欢迎回来</h2>
-            <p class="text-center text-muted-foreground mb-6">登录您的美食打卡账户</p>
-        </div>
+    <!-- Food-themed decorative SVG pattern -->
+    <svg class="absolute inset-0 w-full h-full opacity-[0.03] pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <pattern id="food-pattern" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+                <circle cx="40" cy="40" r="18" fill="none" stroke="#F97316" stroke-width="1.5"/>
+                <circle cx="40" cy="40" r="8" fill="none" stroke="#F97316" stroke-width="1"/>
+                <path d="M32 30 Q40 24 48 30" fill="none" stroke="#FBBF24" stroke-width="1"/>
+                <path d="M30 40 Q24 40 30 34" fill="none" stroke="#FBBF24" stroke-width="1"/>
+            </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#food-pattern)"/>
+    </svg>
 
-        <div class="px-6 pb-6">
-            <!-- Error message display -->
-            <div th:if="${error}" class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-                <p class="text-sm" th:text="${error}">错误消息</p>
+    <!-- Content -->
+    <div class="relative z-10 min-h-screen flex items-center justify-center p-4">
+        <div class="w-full max-w-md animate-scale-in">
+            <!-- Logo Area -->
+            <div class="text-center mb-8 animate-fade-in-up">
+                <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-accent mb-4 shadow-lg shadow-orange-200/50">
+                    <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 16.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                    </svg>
+                </div>
+                <h1 class="text-3xl font-bold mb-2 gradient-text">美食打卡</h1>
+                <p class="text-stone-500 text-sm">发现美食，分享体验</p>
             </div>
 
-            <!-- Success message display -->
-            <div th:if="${success}" class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md">
-                <p class="text-sm" th:text="${success}">成功消息</p>
+            <!-- Login Card -->
+            <div class="glass-strong auth-card">
+                <div class="p-8 pb-2">
+                    <h2 class="text-2xl font-bold text-center text-stone-800 mb-1">欢迎回来</h2>
+                    <p class="text-center text-stone-500 mb-6">登录您的美食打卡账户</p>
+                </div>
+
+                <div class="px-8 pb-8">
+                    <!-- Error message display -->
+                    <div th:if="${error}" class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl">
+                        <p class="text-sm" th:text="${error}">错误消息</p>
+                    </div>
+
+                    <!-- Success message display -->
+                    <div th:if="${success}" class="mb-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl">
+                        <p class="text-sm" th:text="${success}">成功消息</p>
+                    </div>
+
+                    <form action="/login" method="POST" class="space-y-5">
+                        <!-- Username Field -->
+                        <div class="space-y-2">
+                            <label for="username" class="text-sm font-medium text-stone-600">用户名</label>
+                            <div class="relative">
+                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                </svg>
+                                <input
+                                        id="username"
+                                        name="username"
+                                        type="text"
+                                        placeholder="请输入用户名"
+                                        class="input-warm pl-10"
+                                        required
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Password Field -->
+                        <div class="space-y-2">
+                            <label for="password" class="text-sm font-medium text-stone-600">密码</label>
+                            <div class="relative">
+                                <svg class="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                                <input
+                                        id="password"
+                                        name="password"
+                                        type="password"
+                                        placeholder="请输入密码"
+                                        class="input-warm pl-10"
+                                        required
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Forgot Password -->
+                        <div class="flex items-center justify-end">
+                            <a href="/forgot-password" class="text-primary hover:text-primary-dark text-sm font-medium transition-colors">
+                                忘记密码？
+                            </a>
+                        </div>
+
+                        <!-- Login Button -->
+                        <button
+                                type="submit"
+                                class="btn-primary w-full py-3 px-4 text-sm"
+                        >
+                            登录
+                        </button>
+
+                        <!-- Register Link -->
+                        <div class="text-center pt-5 border-t border-stone-100">
+                            <p class="text-stone-500 text-sm">
+                                还没有账户？
+                                <a href="/register" class="text-primary hover:text-primary-dark font-medium transition-colors">
+                                    立即注册
+                                </a>
+                            </p>
+                        </div>
+                    </form>
+                </div>
             </div>
-
-            <form action="/login" method="POST" class="space-y-4">
-                <!-- Username Field -->
-                <div class="space-y-2">
-                    <label for="username" class="text-sm font-medium text-card-foreground">用户名</label>
-                    <div class="relative">
-                        <svg class="absolute left-3 top-3 h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
-                        <input
-                                id="username"
-                                name="username"
-                                type="text"
-                                placeholder="请输入用户名"
-                                class="w-full pl-10 pr-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                required
-                        />
-                    </div>
-                </div>
-
-                <!-- Password Field -->
-                <div class="space-y-2">
-                    <label for="password" class="text-sm font-medium text-card-foreground">密码</label>
-                    <div class="relative">
-                        <svg class="absolute left-3 top-3 h-4 w-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-                        </svg>
-                        <input
-                                id="password"
-                                name="password"
-                                type="password"
-                                placeholder="请输入密码"
-                                class="w-full pl-10 pr-3 py-2 border border-border rounded-md focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                                required
-                        />
-                    </div>
-                </div>
-
-                <!-- Forgot Password -->
-                <div class="flex items-center justify-between">
-                    <a href="#" class="text-primary hover:text-accent text-sm underline">
-                        忘记密码？
-                    </a>
-                </div>
-
-                <!-- Login Button -->
-                <button
-                        type="submit"
-                        class="w-full bg-primary hover:bg-accent text-primary-foreground font-medium py-2 px-4 rounded-md transition-colors duration-200"
-                >
-                    登录
-                </button>
-
-                <!-- Updated register link to match Spring Boot routing -->
-                <div class="text-center pt-4 border-t border-border">
-                    <p class="text-muted-foreground text-sm">
-                        还没有账户？
-                        <a href="/register" class="text-primary hover:text-accent font-medium underline">
-                            立即注册
-                        </a>
-                    </p>
-                </div>
-            </form>
         </div>
     </div>
-</div>
 </body>
 </html>

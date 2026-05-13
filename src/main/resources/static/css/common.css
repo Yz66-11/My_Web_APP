@@ -1,0 +1,255 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700;900&display=swap');
+
+:root {
+  --bg-warm: #FFFAF5;
+  --bg-card: #FFFFFF;
+  --primary: #F97316;
+  --primary-dark: #EA580C;
+  --primary-light: #FDBA74;
+  --accent: #FBBF24;
+  --accent-light: #FDE68A;
+  --text-dark: #1C1917;
+  --text-body: #44403C;
+  --text-muted: #78716C;
+  --border-warm: #FED7AA;
+  --border-light: #E7E5E4;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(251, 191, 36, 0.12);
+  --radius: 1rem;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: var(--bg-warm);
+  color: var(--text-body);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ===================== ANIMATIONS ===================== */
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%      { transform: translateY(-14px) rotate(3deg); }
+}
+@keyframes floatAlt {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%      { transform: translateY(-10px) rotate(-2deg); }
+}
+@keyframes pulse-soft {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes gradientMove {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.92); }
+  to   { opacity: 1; transform: scale(1); }
+}
+@keyframes toastIn {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0); opacity: 1; }
+}
+@keyframes toastOut {
+  from { transform: translateX(0); opacity: 1; }
+  to   { transform: translateX(100%); opacity: 0; }
+}
+
+/* ===================== UTILITY CLASSES ===================== */
+.animate-fade-in-up   { animation: fadeInUp 0.5s ease-out both; }
+.animate-fade-in      { animation: fadeIn 0.4s ease-out both; }
+.animate-slide-down   { animation: slideDown 0.3s ease-out both; }
+.animate-scale-in     { animation: scaleIn 0.35s ease-out both; }
+.animate-float        { animation: float 5s ease-in-out infinite; }
+.animate-float-alt    { animation: floatAlt 6s ease-in-out infinite; }
+.animate-gradient     { background-size: 200% 200%; animation: gradientMove 4s ease infinite; }
+
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+
+/* ===================== GLASSMORPHISM ===================== */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(1.8);
+  -webkit-backdrop-filter: blur(20px) saturate(1.8);
+  border: 1px solid var(--glass-border);
+}
+.glass-strong {
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(30px) saturate(2);
+  -webkit-backdrop-filter: blur(30px) saturate(2);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+/* ===================== PREMIUM CARD ===================== */
+.card-premium {
+  background: var(--bg-card);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 3px rgba(28, 25, 23, 0.04), 0 4px 12px rgba(28, 25, 23, 0.03);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.card-premium:hover {
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.08), 0 12px 32px rgba(28, 25, 23, 0.08);
+  transform: translateY(-3px);
+  border-color: var(--border-warm);
+}
+
+/* ===================== BUTTONS ===================== */
+.btn-primary {
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: white;
+  border: none;
+  border-radius: 9999px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(249, 115, 22, 0.25);
+}
+.btn-primary:hover {
+  box-shadow: 0 4px 16px rgba(249, 115, 22, 0.35);
+  transform: translateY(-1px);
+}
+.btn-primary:active {
+  transform: translateY(0) scale(0.97);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text-body);
+  border: 1.5px solid var(--border-light);
+  border-radius: 9999px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.btn-ghost:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(249, 115, 22, 0.04);
+}
+
+/* ===================== NAVIGATION ===================== */
+.nav-glass {
+  background: rgba(255, 250, 245, 0.78);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  border-bottom: 1px solid rgba(253, 215, 177, 0.35);
+}
+
+/* ===================== HERO GRADIENT ===================== */
+.hero-gradient {
+  background: linear-gradient(135deg, #F97316 0%, #FB923C 25%, #FBBF24 50%, #F97316 75%, #EA580C 100%);
+  background-size: 300% 300%;
+  animation: gradientMove 8s ease infinite;
+}
+
+/* ===================== FORM INPUT ===================== */
+.input-warm {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid var(--border-light);
+  border-radius: 0.75rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  outline: none;
+  width: 100%;
+  color: var(--text-dark);
+}
+.input-warm:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.1);
+}
+.input-warm::placeholder {
+  color: var(--text-muted);
+}
+
+/* ===================== TOAST ===================== */
+.toast-container {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+}
+.toast {
+  animation: toastIn 0.35s ease-out;
+}
+.toast.toast-out {
+  animation: toastOut 0.3s ease-in forwards;
+}
+
+/* ===================== SCROLLBAR HIDE ===================== */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ===================== BADGE ===================== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 9999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.2rem 0.6rem;
+  letter-spacing: 0.02em;
+}
+.badge-primary { background: rgba(249, 115, 22, 0.1); color: var(--primary-dark); }
+.badge-success { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
+.badge-warning { background: rgba(245, 158, 11, 0.1); color: #d97706; }
+.badge-danger  { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+
+/* ===================== FLOATING DECORATIONS ===================== */
+.deco-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(60px);
+  opacity: 0.18;
+  pointer-events: none;
+}
+
+/* ===================== GRADIENT TEXT ===================== */
+.gradient-text {
+  background: linear-gradient(135deg, var(--primary), var(--accent), var(--primary-dark));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ===================== AUTH CARD ===================== */
+.auth-card {
+  border-radius: 1.25rem;
+  box-shadow: 0 8px 32px rgba(249, 115, 22, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+/* ===================== RESPONSIVE HELPERS ===================== */
+@media (max-width: 640px) {
+  .hero-gradient { background-size: 400% 400%; }
+}

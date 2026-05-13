@@ -2,221 +2,316 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>我的 - 美食评价系统</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <title>我的 - 美食打卡</title>
+    <link rel="stylesheet" href="/css/common.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#F97316', 'primary-dark': '#EA580C', 'primary-light': '#FDBA74',
+            accent: '#FBBF24', 'accent-light': '#FDE68A', 'bg-warm': '#FFFAF5',
+          },
+          fontFamily: { sans: ['Noto Sans SC', 'sans-serif'] }
+        }
+      }
+    }
+    </script>
+    <style>
+        .password-slide { max-height: 0; overflow: hidden; transition: max-height 0.4s cubic-bezier(0.4,0,0.2,1), opacity 0.3s ease, margin 0.3s ease; opacity: 0; margin-top: 0; }
+        .password-slide.open { max-height: 600px; opacity: 1; margin-top: 1.5rem; }
+    </style>
 </head>
-<body class="bg-gray-50">
+<body>
 <!-- Navigation -->
-<nav class="bg-white shadow-lg border-b-4 border-orange-500">
-    <div class="container mx-auto px-4">
-        <div class="flex justify-between items-center py-4">
-            <a class="text-2xl font-bold text-orange-600 flex items-center" href="/">
-                🍽️ 美食评价系统
+<nav class="nav-glass sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6">
+        <div class="flex justify-between items-center h-16">
+            <a class="text-xl font-bold flex items-center gap-2" href="/">
+                <svg class="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/>
+                </svg>
+                <span class="gradient-text">美食打卡</span>
             </a>
-            <div class="flex items-center space-x-4">
-                <a href="/" class="text-gray-600 hover:text-orange-600 transition-colors">首页</a>
-                <a href="/merchants" class="text-gray-600 hover:text-orange-600 transition-colors">商家列表</a>
-                <a href="/food-gallery" class="text-gray-600 hover:text-orange-600 transition-colors">美食图鉴</a>
+            <div class="flex items-center gap-1">
+                <a href="/" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">首页</a>
+                <a href="/merchants" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">商家</a>
+                <a href="/posts" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">社区</a>
+                <a href="/food-gallery" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">图鉴</a>
+                <a href="/profile" class="px-3 py-2 rounded-lg text-sm font-bold text-primary bg-orange-50 transition-all">我的</a>
             </div>
         </div>
     </div>
 </nav>
 
-<!-- Profile Header -->
-<div class="bg-gradient-to-r from-orange-500 to-red-500 text-white py-12">
-    <div class="container mx-auto px-4 text-center">
-        <div class="w-20 h-20 bg-white rounded-full mx-auto mb-3 flex items-center justify-center text-3xl">👤</div>
-        <h1 class="text-3xl font-bold mb-1" th:text="${username}">用户名</h1>
-        <p class="text-sm opacity-80" th:text="${email}">email@example.com</p>
+<!-- Profile Header (shorter hero) -->
+<div class="hero-gradient relative overflow-hidden" style="padding: 3rem 0;">
+    <!-- Decorative dots pattern -->
+    <svg class="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+            <pattern id="dotPattern" x="0" y="0" width="30" height="30" patternUnits="userSpaceOnUse">
+                <circle cx="2" cy="2" r="2" fill="white"/>
+            </pattern>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#dotPattern)"/>
+    </svg>
+    <!-- Floating food SVG decorations -->
+    <svg class="absolute top-2 right-12 w-10 h-10 text-white/20 animate-float" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2v7zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/>
+    </svg>
+    <svg class="absolute bottom-2 left-16 w-8 h-8 text-white/15 animate-float-alt" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M2 15.5V2C2 1.45 2.45 1 3 1h4c.55 0 1 .45 1 1v13.5c0 1.38-1.12 2.5-2.5 2.5S2 16.88 2 15.5zM11 22V5c0-.55.45-1 1-1h4c.55 0 1 .45 1 1v17c0 1.1-.9 2-2 2h-2c-1.1 0-2-.9-2-2z"/>
+    </svg>
+    <div class="relative max-w-4xl mx-auto px-4 text-center text-white">
+        <!-- Avatar with gradient -->
+        <div class="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-white/90 to-amber-200/90 flex items-center justify-center shadow-lg">
+            <span class="text-4xl font-black text-primary-dark" th:text="${username != null and !username.isEmpty() ? username.charAt(0) : 'U'}">U</span>
+        </div>
+        <h1 class="text-2xl font-bold mb-1 drop-shadow-sm" th:text="${username}">用户名</h1>
+        <p class="text-sm text-white/80" th:text="${email}">email@example.com</p>
     </div>
 </div>
 
 <!-- Messages -->
-<div th:if="${success}" class="container mx-auto px-4 mt-6">
-    <div class="max-w-3xl mx-auto bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
+<div class="max-w-3xl mx-auto px-4">
+    <div th:if="${success}" class="mt-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 text-sm font-medium animate-slide-down">
         <span th:text="${success}"></span>
     </div>
-</div>
-<div th:if="${error}" class="container mx-auto px-4 mt-6">
-    <div class="max-w-3xl mx-auto bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg">
+    <div th:if="${error}" class="mt-6 p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm font-medium animate-slide-down">
         <span th:text="${error}"></span>
     </div>
 </div>
 
-<div class="container mx-auto px-4 py-8">
-    <div class="max-w-3xl mx-auto space-y-6">
+<div class="max-w-3xl mx-auto px-4 py-8 space-y-6">
 
-        <!-- Statistics -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">我的统计</h2>
-            <div class="grid grid-cols-3 gap-4 text-center">
-                <div class="p-3">
-                    <div class="text-3xl font-bold text-orange-600">0</div>
-                    <div class="text-gray-600 text-sm mt-1">打卡次数</div>
+    <!-- Statistics -->
+    <div class="card-premium p-6 animate-fade-in-up stagger-1">
+        <h2 class="text-lg font-bold text-gray-800 mb-5 flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+            我的统计
+        </h2>
+        <div class="grid grid-cols-3 gap-4">
+            <!-- Checkins -->
+            <div class="text-center p-4 rounded-xl bg-orange-50/60 border border-orange-100/80">
+                <svg class="w-7 h-7 mx-auto mb-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"/>
+                </svg>
+                <div class="text-2xl font-black text-primary" th:text="${checkinCount != null ? checkinCount : 0}">0</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">打卡次数</div>
+            </div>
+            <!-- Gallery -->
+            <div class="text-center p-4 rounded-xl bg-amber-50/60 border border-amber-100/80">
+                <svg class="w-7 h-7 mx-auto mb-2 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+                </svg>
+                <div class="text-2xl font-black text-accent" th:text="${galleryCount != null ? galleryCount : 0}">0</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">解锁图鉴</div>
+            </div>
+            <!-- Favorites -->
+            <div class="text-center p-4 rounded-xl bg-rose-50/60 border border-rose-100/80">
+                <svg class="w-7 h-7 mx-auto mb-2 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                </svg>
+                <div class="text-2xl font-black text-rose-500" th:text="${favCount != null ? favCount : 0}">0</div>
+                <div class="text-xs text-gray-500 mt-1 font-medium">收藏商家</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Personal Info -->
+    <div class="card-premium p-6 animate-fade-in-up stagger-2">
+        <div class="flex items-center justify-between mb-6">
+            <h2 class="text-lg font-bold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+                个人信息
+            </h2>
+            <button onclick="toggleEdit()" id="editBtn" class="flex items-center gap-1.5 text-primary hover:text-primary-dark text-sm font-semibold transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/>
+                </svg>
+                编辑
+            </button>
+        </div>
+
+        <!-- Display Mode -->
+        <div id="displayMode">
+            <div class="space-y-0">
+                <div class="flex items-center py-3.5 border-b border-warm/30">
+                    <span class="text-gray-400 w-20 flex-shrink-0 text-sm">用户名</span>
+                    <span class="text-gray-800 font-medium" th:text="${username}">-</span>
                 </div>
-                <div class="p-3">
-                    <div class="text-3xl font-bold text-orange-600">0</div>
-                    <div class="text-gray-600 text-sm mt-1">解锁图鉴</div>
+                <div class="flex items-center py-3.5 border-b border-warm/30">
+                    <span class="text-gray-400 w-20 flex-shrink-0 text-sm">邮箱</span>
+                    <span class="text-gray-700" th:text="${email}">-</span>
                 </div>
-                <div class="p-3">
-                    <div class="text-3xl font-bold text-orange-600">0</div>
-                    <div class="text-gray-600 text-sm mt-1">收藏商家</div>
+                <div class="flex items-center py-3.5 border-b border-warm/30">
+                    <span class="text-gray-400 w-20 flex-shrink-0 text-sm">昵称</span>
+                    <span class="text-gray-700" th:text="${name ?: '未设置'}">-</span>
+                </div>
+                <div class="flex items-center py-3.5 border-b border-warm/30">
+                    <span class="text-gray-400 w-20 flex-shrink-0 text-sm">手机</span>
+                    <span class="text-gray-700" th:text="${phone ?: '未设置'}">-</span>
+                </div>
+                <div class="flex items-center py-3.5 border-b border-warm/30">
+                    <span class="text-gray-400 w-20 flex-shrink-0 text-sm">性别</span>
+                    <span class="text-gray-700" th:text="${displayGender}">-</span>
+                </div>
+                <div class="flex items-center py-3.5 border-b border-warm/30">
+                    <span class="text-gray-400 w-20 flex-shrink-0 text-sm">年龄</span>
+                    <span class="text-gray-700" th:text="${age != null ? age + '岁' : '未设置'}">-</span>
+                </div>
+                <div class="flex items-center py-3.5">
+                    <span class="text-gray-400 w-20 flex-shrink-0 text-sm">个性签名</span>
+                    <span class="text-gray-700" th:text="${bio ?: '未设置'}">-</span>
                 </div>
             </div>
         </div>
 
-        <!-- Personal Info -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <div class="flex items-center justify-between mb-6">
-                <h2 class="text-xl font-bold text-gray-800">个人信息</h2>
-                <button onclick="toggleEdit()" id="editBtn" class="text-orange-500 hover:text-orange-700 text-sm font-medium">
-                    ✏️ 编辑
-                </button>
-            </div>
-
-            <!-- Display Mode -->
-            <div id="displayMode">
-                <div class="space-y-4">
-                    <div class="flex border-b border-gray-100 pb-3">
-                        <span class="text-gray-500 w-24 flex-shrink-0">用户名</span>
-                        <span class="text-gray-800 font-medium" th:text="${username}">-</span>
-                    </div>
-                    <div class="flex border-b border-gray-100 pb-3">
-                        <span class="text-gray-500 w-24 flex-shrink-0">邮箱</span>
-                        <span class="text-gray-800" th:text="${email}">-</span>
-                    </div>
-                    <div class="flex border-b border-gray-100 pb-3">
-                        <span class="text-gray-500 w-24 flex-shrink-0">昵称</span>
-                        <span class="text-gray-800" th:text="${name ?: '未设置'}">-</span>
-                    </div>
-                    <div class="flex border-b border-gray-100 pb-3">
-                        <span class="text-gray-500 w-24 flex-shrink-0">手机</span>
-                        <span class="text-gray-800" th:text="${phone ?: '未设置'}">-</span>
-                    </div>
-                    <div class="flex border-b border-gray-100 pb-3">
-                        <span class="text-gray-500 w-24 flex-shrink-0">性别</span>
-                        <span class="text-gray-800" th:text="${displayGender}">-</span>
-                    </div>
-                    <div class="flex border-b border-gray-100 pb-3">
-                        <span class="text-gray-500 w-24 flex-shrink-0">年龄</span>
-                        <span class="text-gray-800" th:text="${age != null ? age + '岁' : '未设置'}">-</span>
-                    </div>
-                    <div class="flex">
-                        <span class="text-gray-500 w-24 flex-shrink-0">个性签名</span>
-                        <span class="text-gray-800" th:text="${bio ?: '未设置'}">-</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Edit Mode (hidden by default) -->
-            <div id="editMode" class="hidden">
-                <form action="/update-profile" method="post" class="space-y-4">
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-600 text-sm font-medium mb-1">昵称</label>
-                            <input type="text" name="name" th:value="${name}" placeholder="请输入昵称"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
-                        </div>
-                        <div>
-                            <label class="block text-gray-600 text-sm font-medium mb-1">手机号</label>
-                            <input type="text" name="phone" th:value="${phone}" placeholder="请输入手机号"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-gray-600 text-sm font-medium mb-1">性别</label>
-                            <select name="gender" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
-                                <option value="0" th:selected="${gender == null or gender == 0}">未设置</option>
-                                <option value="1" th:selected="${gender == 1}">男</option>
-                                <option value="2" th:selected="${gender == 2}">女</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-gray-600 text-sm font-medium mb-1">年龄</label>
-                            <input type="number" name="age" th:value="${age}" min="1" max="150" placeholder="请输入年龄"
-                                   class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
-                        </div>
+        <!-- Edit Mode (hidden by default) -->
+        <div id="editMode" class="hidden">
+            <form action="/update-profile" method="post" class="space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-500 text-xs font-semibold mb-1.5 uppercase tracking-wide">昵称</label>
+                        <input type="text" name="name" th:value="${name}" placeholder="请输入昵称" class="input-warm">
                     </div>
                     <div>
-                        <label class="block text-gray-600 text-sm font-medium mb-1">个性签名</label>
-                        <textarea name="bio" rows="3" placeholder="介绍一下自己吧..."
-                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500"
-                                  th:text="${bio}"></textarea>
+                        <label class="block text-gray-500 text-xs font-semibold mb-1.5 uppercase tracking-wide">手机号</label>
+                        <input type="text" name="phone" th:value="${phone}" placeholder="请输入手机号" class="input-warm">
                     </div>
-                    <div class="flex space-x-4 pt-2">
-                        <button type="submit" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-lg transition-colors">
-                            保存修改
-                        </button>
-                        <button type="button" onclick="toggleEdit()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2.5 rounded-lg transition-colors">
-                            取消
-                        </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-gray-500 text-xs font-semibold mb-1.5 uppercase tracking-wide">性别</label>
+                        <select name="gender" class="input-warm">
+                            <option value="0" th:selected="${gender == null or gender == 0}">未设置</option>
+                            <option value="1" th:selected="${gender == 1}">男</option>
+                            <option value="2" th:selected="${gender == 2}">女</option>
+                        </select>
                     </div>
-                </form>
-            </div>
-        </div>
-
-        <!-- Account Management -->
-        <div class="bg-white rounded-xl shadow-md p-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">账号管理</h2>
-            <div class="space-y-2">
-                <button onclick="togglePassword()" class="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors">
-                    <div class="flex items-center">
-                        <span class="text-xl mr-3">🔑</span>
-                        <span class="font-medium text-gray-800">修改密码</span>
+                    <div>
+                        <label class="block text-gray-500 text-xs font-semibold mb-1.5 uppercase tracking-wide">年龄</label>
+                        <input type="number" name="age" th:value="${age}" min="1" max="150" placeholder="请输入年龄" class="input-warm">
                     </div>
-                    <span class="text-gray-400">›</span>
-                </button>
-                <a href="/shop/apply" class="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors block">
-                    <div class="flex items-center">
-                        <span class="text-xl mr-3">🏪</span>
-                        <span class="font-medium text-gray-800">商家入驻</span>
-                    </div>
-                    <span class="text-gray-400">›</span>
-                </a>
-                <a href="/my-shops" class="w-full flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg transition-colors block">
-                    <div class="flex items-center">
-                        <span class="text-xl mr-3">📋</span>
-                        <span class="font-medium text-gray-800">我的店铺</span>
-                    </div>
-                    <span class="text-gray-400">›</span>
-                </a>
-                <form action="/logout" method="post" class="w-full">
-                    <button type="submit" class="w-full flex items-center justify-between p-3 hover:bg-red-50 rounded-lg transition-colors text-left">
-                        <div class="flex items-center">
-                            <span class="text-xl mr-3">🚪</span>
-                            <span class="font-medium text-red-600">退出登录</span>
-                        </div>
-                        <span class="text-gray-400">›</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-
-        <!-- Change Password Form -->
-        <div id="passwordForm" class="bg-white rounded-xl shadow-md p-6 hidden">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">修改密码</h2>
-            <form action="/change-password" method="post" class="space-y-4">
-                <div>
-                    <label class="block text-gray-700 font-medium mb-1 text-sm">当前密码</label>
-                    <input type="password" name="oldPassword" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
                 </div>
                 <div>
-                    <label class="block text-gray-700 font-medium mb-1 text-sm">新密码</label>
-                    <input type="password" name="newPassword" required minlength="6" placeholder="至少6位" class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
+                    <label class="block text-gray-500 text-xs font-semibold mb-1.5 uppercase tracking-wide">个性签名</label>
+                    <textarea name="bio" rows="3" placeholder="介绍一下自己吧..." class="input-warm" th:text="${bio}"></textarea>
                 </div>
-                <div>
-                    <label class="block text-gray-700 font-medium mb-1 text-sm">确认新密码</label>
-                    <input type="password" name="confirmPassword" required class="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:border-orange-500">
-                </div>
-                <div class="flex space-x-4">
-                    <button type="submit" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2.5 rounded-lg transition-colors">确认修改</button>
-                    <button type="button" onclick="togglePassword()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2.5 rounded-lg transition-colors">取消</button>
+                <div class="flex gap-3 pt-2">
+                    <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">保存修改</button>
+                    <button type="button" onclick="toggleEdit()" class="btn-ghost flex-1 py-2.5 text-sm">取消</button>
                 </div>
             </form>
         </div>
     </div>
+
+    <!-- Account Management -->
+    <div class="card-premium p-6 animate-fade-in-up stagger-3">
+        <h2 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+            </svg>
+            账号管理
+        </h2>
+        <div class="space-y-1">
+            <!-- Change Password -->
+            <button onclick="togglePassword()" class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-orange-50/70 transition-all group">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-orange-100/80 flex items-center justify-center">
+                        <svg class="w-4.5 h-4.5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+                        </svg>
+                    </div>
+                    <span class="font-medium text-gray-700 text-sm">修改密码</span>
+                </div>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+            </button>
+            <!-- Merchant Apply -->
+            <a href="/shop/apply" class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-orange-50/70 transition-all group block">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-amber-100/80 flex items-center justify-center">
+                        <svg class="w-4.5 h-4.5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/>
+                        </svg>
+                    </div>
+                    <span class="font-medium text-gray-700 text-sm">商家入驻</span>
+                </div>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+            <!-- My Shops -->
+            <a href="/my-shops" class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-orange-50/70 transition-all group block">
+                <div class="flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-100/80 flex items-center justify-center">
+                        <svg class="w-4.5 h-4.5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                    </div>
+                    <span class="font-medium text-gray-700 text-sm">我的店铺</span>
+                </div>
+                <svg class="w-4 h-4 text-gray-300 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                </svg>
+            </a>
+            <!-- Logout -->
+            <form action="/logout" method="post" class="w-full">
+                <button type="submit" class="w-full flex items-center justify-between p-3.5 rounded-xl hover:bg-red-50 transition-all group text-left">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-lg bg-red-100/80 flex items-center justify-center">
+                            <svg class="w-4.5 h-4.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/>
+                            </svg>
+                        </div>
+                        <span class="font-medium text-red-500 text-sm">退出登录</span>
+                    </div>
+                    <svg class="w-4 h-4 text-gray-300 group-hover:text-red-400 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </button>
+            </form>
+        </div>
+
+        <!-- Change Password Form (slide-down) -->
+        <div id="passwordForm" class="password-slide">
+            <div class="card-premium p-6 !border-orange-200/60 bg-orange-50/30">
+                <h3 class="text-base font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                    </svg>
+                    修改密码
+                </h3>
+                <form action="/change-password" method="post" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-500 text-xs font-semibold mb-1.5 uppercase tracking-wide">当前密码</label>
+                        <input type="password" name="oldPassword" required class="input-warm" placeholder="请输入当前密码">
+                    </div>
+                    <div>
+                        <label class="block text-gray-500 text-xs font-semibold mb-1.5 uppercase tracking-wide">新密码</label>
+                        <input type="password" name="newPassword" required minlength="6" placeholder="至少6位" class="input-warm">
+                    </div>
+                    <div>
+                        <label class="block text-gray-500 text-xs font-semibold mb-1.5 uppercase tracking-wide">确认新密码</label>
+                        <input type="password" name="confirmPassword" required class="input-warm" placeholder="请再次输入新密码">
+                    </div>
+                    <div class="flex gap-3">
+                        <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">确认修改</button>
+                        <button type="button" onclick="togglePassword()" class="btn-ghost flex-1 py-2.5 text-sm">取消</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>
@@ -226,9 +321,8 @@
         document.getElementById('editBtn').classList.toggle('hidden');
     }
     function togglePassword() {
-        document.getElementById('passwordForm').classList.toggle('hidden');
+        document.getElementById('passwordForm').classList.toggle('open');
     }
 </script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

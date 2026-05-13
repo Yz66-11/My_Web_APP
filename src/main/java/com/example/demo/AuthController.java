@@ -4,10 +4,12 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
 import java.security.Principal;
 import java.util.Optional;
+import java.util.UUID;
 
 @Controller
 public class AuthController {
@@ -34,12 +36,14 @@ public class AuthController {
     public String showLoginPage(@RequestParam(value = "error", required = false) String error,
                                 @RequestParam(value = "logout", required = false) String logout,
                                 @RequestParam(value = "registered", required = false) String registered,
+                                @RequestParam(value = "reset", required = false) String reset,
                                 Model model) {
         if (error != null) {
             model.addAttribute("error", java.net.URLDecoder.decode(error, java.nio.charset.StandardCharsets.UTF_8));
         }
         if (logout != null) model.addAttribute("success", "您已成功退出登录！");
         if (registered != null) model.addAttribute("success", "注册成功！请登录您的账户。");
+        if (reset != null) model.addAttribute("success", "密码重置成功！请使用新密码登录。");
         return "login";
     }
 
@@ -143,6 +147,89 @@ public class AuthController {
     @ResponseBody
     public String processCheckin(@RequestBody CheckinRequest checkinRequest, Principal principal) {
         return "{\"success\": true, \"message\": \"打卡成功！\"}";
+    }
+
+    // ==================== Forgot Password ====================
+
+    @GetMapping("/forgot-password")
+    public String showForgotPassword() {
+        return "forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String processForgotPassword(@RequestParam("username") String username,
+                                       HttpSession session, Model model) {
+        if (!userService.existsByUsername(username)) {
+            model.addAttribute("error", "用户名不存在！");
+            return "forgot-password";
+        }
+        String token = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
+        session.setAttribute("resetToken", token);
+        session.setAttribute("resetUsername", username);
+        model.addAttribute("ottToken", token);
+        return "ott-sent";
+    }
+
+    @GetMapping("/ott/sent")
+    public String ottSent(HttpSession session, Model model) {
+        String token = (String) session.getAttribute("resetToken");
+        if (token != null) {
+            model.addAttribute("ottToken", token);
+        }
+        return "ott-sent";
+    }
+
+    @GetMapping("/verify-token")
+    public String showVerifyToken(@RequestParam(value = "token", required = false) String token, Model model) {
+        model.addAttribute("token", token);
+        return "verify-token";
+    }
+
+    @PostMapping("/verify-token")
+    public String processVerifyToken(@RequestParam("token") String token,
+                                     HttpSession session, Model model) {
+        String sessionToken = (String) session.getAttribute("resetToken");
+        if (sessionToken == null || !sessionToken.equals(token.trim().toUpperCase())) {
+            model.addAttribute("error", "验证码无效或已过期，请重新获取");
+            return "verify-token";
+        }
+        session.removeAttribute("resetToken");
+        session.setAttribute("tokenVerified", true);
+        return "redirect:/reset-password";
+    }
+
+    @GetMapping("/reset-password")
+    public String showResetPassword(HttpSession session, Model model) {
+        Boolean verified = (Boolean) session.getAttribute("tokenVerified");
+        String username = (String) session.getAttribute("resetUsername");
+        if (!Boolean.TRUE.equals(verified) || username == null) {
+            return "redirect:/forgot-password";
+        }
+        return "reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    public String resetPassword(@RequestParam("newPassword") String newPassword,
+                                @RequestParam("confirmPassword") String confirmPassword,
+                                HttpSession session) {
+        if (!newPassword.equals(confirmPassword)) {
+            return "redirect:/reset-password?error=" + java.net.URLEncoder.encode(
+                    "两次输入的密码不一致！", java.nio.charset.StandardCharsets.UTF_8);
+        }
+        if (newPassword.length() < 6) {
+            return "redirect:/reset-password?error=" + java.net.URLEncoder.encode(
+                    "密码长度不能少于6位！", java.nio.charset.StandardCharsets.UTF_8);
+        }
+        String username = (String) session.getAttribute("resetUsername");
+        try {
+            userService.resetPassword(username, newPassword);
+            session.removeAttribute("resetUsername");
+            session.removeAttribute("tokenVerified");
+            return "redirect:/login?reset";
+        } catch (RuntimeException e) {
+            return "redirect:/reset-password?error=" + java.net.URLEncoder.encode(
+                    e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+        }
     }
 }
 

@@ -38,6 +38,10 @@ public class GalleryController {
         model.addAttribute("keyword", keyword);
         model.addAttribute("filter", filter != null ? filter : "all");
 
+        // Global stats (always available)
+        GalleryService.GlobalStats stats = galleryService.getGlobalStats(userId);
+        model.addAttribute("stats", stats);
+
         // Search mode
         if (keyword != null && !keyword.trim().isEmpty()) {
             model.addAttribute("searchResults", galleryService.search(userId, keyword));
@@ -48,10 +52,10 @@ public class GalleryController {
 
         // Drill-down hierarchy
         if (shopId != null) {
-            model.addAttribute("dishPage", galleryService.getDishes(userId, shopId));
+            var dishPage = galleryService.getDishes(userId, shopId);
+            model.addAttribute("dishPage", dishPage);
             model.addAttribute("breadcrumb",
-                    city + " / " + district + " / " +
-                    galleryService.getDishes(userId, shopId).getShop().getShopName());
+                    city + " / " + district + " / " + dishPage.getShop().getShopName());
             model.addAttribute("level", "dish");
             model.addAttribute("city", city);
             model.addAttribute("district", district);
@@ -60,6 +64,7 @@ public class GalleryController {
             model.addAttribute("breadcrumb", city + " / " + district);
             model.addAttribute("level", "shop");
             model.addAttribute("city", city);
+            model.addAttribute("district", district);
         } else if (city != null) {
             model.addAttribute("districtPage", galleryService.getDistricts(userId, city));
             model.addAttribute("breadcrumb", city);
@@ -70,11 +75,8 @@ public class GalleryController {
             model.addAttribute("level", "city");
         }
 
-        // Global stats
-        GalleryService.GlobalStats stats = galleryService.getGlobalStats(userId);
-        model.addAttribute("stats", stats);
-
         model.addAttribute("isSearch", false);
+        model.addAttribute("searchResults", null);
         return "food-gallery";
     }
 

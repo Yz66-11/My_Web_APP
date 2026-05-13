@@ -98,7 +98,7 @@
                 <div class="px-5 pb-3">
                     <h3 class="text-base font-bold text-gray-900 mb-1" th:text="${post.title}">标题</h3>
                     <p class="text-sm text-gray-600 leading-relaxed"
-                       th:text="${post.content != null && post.content.length() > 150} ? ${post.content.substring(0, 150)} + '...' : ${post.content}">内容预览</p>
+                       th:text="${post.content != null && post.content.length() > 150 ? post.content.substring(0, 150) + '...' : post.content}">内容预览</p>
                 </div>
 
                 <div th:if="${post.location}" class="px-5 pb-3">
