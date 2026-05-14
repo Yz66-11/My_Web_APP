@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>菜品管理 - 美食打卡</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316', 'primary-dark': '#EA580C', 'primary-light': '#FDBA74',
+                        accent: '#FBBF24', 'accent-light': '#FDE68A', 'bg-warm': '#FFFAF5',
+                    },
+                    fontFamily: { sans: ['Noto Sans SC', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-bg-warm">
+
+<!-- Navigation -->
+<nav class="nav-glass sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-4">
+        <div class="flex justify-between items-center h-16">
+            <a class="text-xl font-bold flex items-center gap-2" href="/">
+                <svg class="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
+                <span class="text-primary">美食打卡</span>
+            </a>
+            <div class="flex items-center gap-1">
+                <a href="/my-shops" class="px-3 py-2 rounded-lg text-sm font-medium text-stone-500 hover:text-primary hover:bg-orange-50 transition-all flex items-center gap-1">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                    我的店铺
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Page Header -->
+<div class="relative bg-gradient-to-r from-orange-500 to-amber-500 text-white py-10 overflow-hidden">
+    <svg class="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="white"/></pattern></defs><rect width="100%" height="100%" fill="url(#dots)"/></svg>
+    <div class="relative max-w-5xl mx-auto px-4">
+        <div class="flex items-center gap-3 mb-1">
+            <h1 class="text-3xl font-black">菜品管理</h1>
+            <span th:if="${shop.status.name() == 'PENDING'}" class="badge bg-white/20 text-white text-xs">待审核</span>
+            <span th:if="${shop.status.name() == 'APPROVED'}" class="badge bg-white/20 text-white text-xs">已通过</span>
+        </div>
+        <p class="text-white/90 text-sm" th:text="'「' + ${shop.shopName} + '」的菜品列表'">菜品列表</p>
+    </div>
+</div>
+
+<div class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Messages -->
+    <div th:if="${success}" class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-xl animate-fade-in-up flex items-center gap-2">
+        <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+        <span class="text-sm" th:text="${success}"></span>
+    </div>
+    <div th:if="${error}" class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl animate-fade-in-up flex items-center gap-2">
+        <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="text-sm" th:text="${error}"></span>
+    </div>
+
+    <!-- Add / Edit Dish Form -->
+    <div class="card-premium p-6 md:p-8 mb-8 animate-fade-in-up">
+        <h2 th:text="${editMode} ? '编辑菜品' : '添加菜品'" class="text-lg font-bold text-stone-800 mb-5 flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        </h2>
+
+        <!-- Add Form -->
+        <form th:if="${!editMode}" method="post" th:action="@{/merchant/{shopId}/dishes(shopId=${shop.id})}" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-stone-600 font-medium text-sm mb-1.5">菜品名称 <span class="text-red-500">*</span></label>
+                    <input type="text" name="dishName" required placeholder="请输入菜品名称" class="input-warm"/>
+                </div>
+                <div>
+                    <label class="block text-stone-600 font-medium text-sm mb-1.5">价格 (元) <span class="text-red-500">*</span></label>
+                    <input type="number" name="price" required step="0.01" min="0" placeholder="0.00" class="input-warm"/>
+                </div>
+            </div>
+            <div>
+                <label class="block text-stone-600 font-medium text-sm mb-1.5">菜品描述</label>
+                <textarea name="description" rows="3" placeholder="请输入菜品描述..." class="input-warm resize-y"></textarea>
+            </div>
+            <div>
+                <label class="block text-stone-600 font-medium text-sm mb-1.5">图片链接</label>
+                <input type="url" name="imageUrl" placeholder="https://example.com/dish.jpg" class="input-warm"/>
+            </div>
+            <div class="flex gap-3 pt-1">
+                <button type="submit" class="btn-primary px-6 py-2.5 text-sm inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    添加菜品
+                </button>
+            </div>
+        </form>
+
+        <!-- Edit Form -->
+        <form th:if="${editMode}" method="post" th:action="@{/merchant/{shopId}/dishes/{dishId}/update(shopId=${shop.id}, dishId=${dish.id})}" class="space-y-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-stone-600 font-medium text-sm mb-1.5">菜品名称 <span class="text-red-500">*</span></label>
+                    <input type="text" name="dishName" required th:value="${dish.dishName}" class="input-warm"/>
+                </div>
+                <div>
+                    <label class="block text-stone-600 font-medium text-sm mb-1.5">价格 (元) <span class="text-red-500">*</span></label>
+                    <input type="number" name="price" required step="0.01" min="0" th:value="${dish.price}" class="input-warm"/>
+                </div>
+            </div>
+            <div>
+                <label class="block text-stone-600 font-medium text-sm mb-1.5">菜品描述</label>
+                <textarea name="description" rows="3" class="input-warm resize-y" th:text="${dish.description}"></textarea>
+            </div>
+            <div>
+                <label class="block text-stone-600 font-medium text-sm mb-1.5">图片链接</label>
+                <input type="url" name="imageUrl" th:value="${dish.imageUrl}" placeholder="https://example.com/dish.jpg" class="input-warm"/>
+            </div>
+            <div class="flex gap-3 pt-1">
+                <button type="submit" class="btn-primary px-6 py-2.5 text-sm inline-flex items-center gap-1.5">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                    保存修改
+                </button>
+                <a th:href="@{/merchant/{shopId}/dishes(shopId=${shop.id})}" class="btn-ghost px-6 py-2.5 text-sm inline-flex items-center gap-1.5">
+                    取消
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Dish List -->
+    <div class="mb-6 flex items-center justify-between">
+        <h2 class="text-lg font-bold text-stone-800 flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>
+            菜品列表
+            <span class="text-sm font-normal text-stone-400" th:text="'(' + ${#lists.size(dishes)} + '道)'"></span>
+        </h2>
+    </div>
+
+    <!-- Empty State -->
+    <div th:if="${#lists.isEmpty(dishes)}" class="text-center py-16 animate-fade-in">
+        <svg class="w-16 h-16 mx-auto mb-4 text-stone-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+        <p class="text-stone-400 mb-1">暂无菜品</p>
+        <p class="text-stone-400 text-sm">请在上方表单中添加您的第一道菜品</p>
+    </div>
+
+    <!-- Dish Cards (shown when NOT in edit mode) -->
+    <div th:if="${!editMode && !#lists.isEmpty(dishes)}" class="space-y-3">
+        <div th:each="dish, iter : ${dishes}"
+             class="card-premium p-5 animate-fade-in-up"
+             th:style="${'animation-delay:' + (iter.index * 0.05) + 's'}">
+            <div class="flex items-center gap-5">
+                <!-- Dish Image / Placeholder -->
+                <div class="w-20 h-20 rounded-xl bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center shrink-0 overflow-hidden">
+                    <img th:if="${dish.imageUrl != null && !dish.imageUrl.isEmpty()}"
+                         th:src="${dish.imageUrl}" alt="" class="w-full h-full object-cover"/>
+                    <span th:if="${dish.imageUrl == null || dish.imageUrl.isEmpty()}" class="text-3xl">&#127858;</span>
+                </div>
+
+                <!-- Dish Info -->
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 mb-1">
+                        <h3 class="font-bold text-stone-800" th:text="${dish.dishName}">菜品名</h3>
+                        <span th:if="${dish.status.name() == 'AVAILABLE'}" class="badge badge-success">上架</span>
+                        <span th:if="${dish.status.name() == 'UNAVAILABLE'}" class="badge badge-warning">下架</span>
+                    </div>
+                    <p class="text-primary font-bold text-sm">&#165;<span th:text="${dish.price}">0.00</span></p>
+                    <p th:if="${dish.description != null && !dish.description.isEmpty()}"
+                       class="text-stone-400 text-xs mt-1 line-clamp-1" th:text="${dish.description}">描述</p>
+                </div>
+
+                <!-- Actions -->
+                <div class="flex items-center gap-2 shrink-0">
+                    <form th:action="@{/merchant/{shopId}/dishes/{dishId}/toggle(shopId=${shop.id}, dishId=${dish.id})}" method="post">
+                        <button type="submit"
+                                th:class="${dish.status.name() == 'AVAILABLE'} ? 'btn-ghost px-3 py-1.5 text-xs' : 'btn-primary px-3 py-1.5 text-xs'"
+                                th:title="${dish.status.name() == 'AVAILABLE'} ? '下架' : '上架'">
+                            <span th:text="${dish.status.name() == 'AVAILABLE'} ? '下架' : '上架'"></span>
+                        </button>
+                    </form>
+                    <a th:href="@{/merchant/{shopId}/dishes/{dishId}/edit(shopId=${shop.id}, dishId=${dish.id})}"
+                       class="btn-ghost px-3 py-1.5 text-xs inline-flex items-center gap-1">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                        编辑
+                    </a>
+                    <form th:action="@{/merchant/{shopId}/dishes/{dishId}/delete(shopId=${shop.id}, dishId=${dish.id})}" method="post"
+                          onsubmit="return confirm('确定要删除「' + this.closest('.card-premium').querySelector('h3').textContent + '」吗？此操作不可恢复。')">
+                        <button type="submit" class="px-3 py-1.5 text-xs rounded-full text-red-500 border border-red-200 hover:bg-red-50 transition-colors inline-flex items-center gap-1">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            删除
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Tip -->
+    <div class="mt-8 text-center text-stone-400 text-sm">
+        <p th:if="${shop.status.name() == 'PENDING'}" class="bg-amber-50 border border-amber-200 text-amber-600 px-4 py-3 rounded-xl inline-flex items-center gap-2">
+            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            店铺审核通过后，菜品将对用户可见
+        </p>
+    </div>
+</div>
+
+</body>
+</html>

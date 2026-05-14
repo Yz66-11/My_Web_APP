@@ -96,7 +96,7 @@
                     </div>
                     <div class="bg-stone-100 rounded-full h-2.5">
                         <div class="bg-gradient-to-r from-orange-400 to-amber-400 h-2.5 rounded-full progress-bar"
-                             th:style="'width:' + ${stats.progress} + '%'"></div>
+                             th:style="${'width:' + stats.progress + '%'}"></div>
                     </div>
                 </div>
                 <div class="text-center">
@@ -188,7 +188,7 @@
                         <div class="flex items-center gap-3">
                             <div class="flex-1 bg-stone-100 rounded-full h-2">
                                 <div class="bg-gradient-to-r from-orange-400 to-amber-400 h-2 rounded-full progress-bar"
-                                     th:style="'width:' + ${city.progress} + '%'"></div>
+                                     th:style="${'width:' + city.progress + '%'}"></div>
                             </div>
                             <span class="text-xs font-bold text-primary whitespace-nowrap"
                                   th:text="${#numbers.formatDecimal(city.progress, 1, 1)} + '%'">0.0%</span>
@@ -230,7 +230,7 @@
                         <div class="flex items-center gap-3">
                             <div class="flex-1 bg-stone-100 rounded-full h-2">
                                 <div class="bg-gradient-to-r from-orange-400 to-amber-400 h-2 rounded-full progress-bar"
-                                     th:style="'width:' + ${dist.progress} + '%'"></div>
+                                     th:style="${'width:' + dist.progress + '%'}"></div>
                             </div>
                             <span class="text-xs font-bold text-primary whitespace-nowrap"
                                   th:text="${#numbers.formatDecimal(dist.progress, 1, 1)} + '%'">0.0%</span>
@@ -279,7 +279,7 @@
                             <div class="flex items-center gap-3">
                                 <div class="flex-1 bg-stone-100 rounded-full h-1.5">
                                     <div class="bg-gradient-to-r from-orange-400 to-amber-400 h-1.5 rounded-full progress-bar"
-                                         th:style="'width:' + ${sv.progress} + '%'"></div>
+                                         th:style="${'width:' + sv.progress + '%'}"></div>
                                 </div>
                                 <span class="text-xs font-bold text-primary whitespace-nowrap"
                                       th:text="${sv.unlockedDishes} + '/' + ${sv.totalDishes}">0/0</span>

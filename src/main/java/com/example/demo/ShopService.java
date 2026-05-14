@@ -1,6 +1,7 @@
 package com.example.demo;
 
 import org.springframework.stereotype.Service;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
@@ -72,6 +73,55 @@ public class ShopService {
 
     public void deleteDish(Long dishId) {
         dishRepository.deleteById(dishId);
+    }
+
+    public Optional<Dish> getDishById(Long dishId) {
+        return dishRepository.findById(dishId);
+    }
+
+    public Dish updateDish(Long dishId, String dishName, BigDecimal price,
+                            String description, String imageUrl) {
+        Dish dish = dishRepository.findById(dishId)
+                .orElseThrow(() -> new RuntimeException("菜品不存在"));
+        if (dishName != null && !dishName.isBlank()) dish.setDishName(dishName);
+        if (price != null) dish.setPrice(price);
+        dish.setDescription(description);
+        dish.setImageUrl(imageUrl);
+        return dishRepository.save(dish);
+    }
+
+    public Dish toggleDishStatus(Long dishId) {
+        Dish dish = dishRepository.findById(dishId)
+                .orElseThrow(() -> new RuntimeException("菜品不存在"));
+        dish.setStatus(dish.getStatus() == Dish.DishStatus.AVAILABLE
+                ? Dish.DishStatus.UNAVAILABLE : Dish.DishStatus.AVAILABLE);
+        return dishRepository.save(dish);
+    }
+
+    public Shop updateShop(Long shopId, String shopName, String category, String city,
+                            String district, String location, String phone,
+                            String startTime, String endTime, String introduction) {
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new RuntimeException("店铺不存在"));
+        if (shopName != null && !shopName.isBlank()) shop.setShopName(shopName);
+        if (category != null) shop.setCategory(category);
+        shop.setCity(city);
+        shop.setDistrict(district);
+        if (location != null) shop.setLocation(location);
+        shop.setPhone(phone);
+        shop.setStartTime(startTime);
+        shop.setEndTime(endTime);
+        shop.setIntroduction(introduction);
+        return shopRepository.save(shop);
+    }
+
+    public void deleteShop(Long shopId) {
+        dishRepository.deleteAll(dishRepository.findByShopId(shopId));
+        shopRepository.deleteById(shopId);
+    }
+
+    public List<Shop> getApprovedShops() {
+        return shopRepository.findByStatus(Shop.ShopStatus.APPROVED);
     }
 
     public List<Shop> searchShops(String keyword) {

@@ -35,6 +35,10 @@
                 <a href="/merchants" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">商家</a>
                 <a href="/food-gallery" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">图鉴</a>
                 <a href="/profile" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">我的</a>
+                <button onclick="toggleCart()" class="relative ml-1 w-10 h-10 rounded-full flex items-center justify-center text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">
+                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+                    <span id="cart-badge" class="hidden absolute -top-0.5 -right-0.5 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">0</span>
+                </button>
             </div>
         </div>
     </div>
@@ -103,7 +107,7 @@
         菜品列表
     </h2>
     <div class="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-        <div th:each="dish, iter : ${dishes}" class="card-premium overflow-hidden animate-fade-in-up" th:style="'animation-delay:' + ${iter.index * 0.05}s">
+        <div th:each="dish, iter : ${dishes}" class="card-premium overflow-hidden animate-fade-in-up" th:style="${'animation-delay:' + (iter.index * 0.05) + 's'}">
             <!-- Dish image area -->
             <div class="h-40 bg-gradient-to-br from-amber-100 to-orange-200 flex items-center justify-center relative overflow-hidden">
                 <div class="absolute top-3 right-3 w-10 h-10 rounded-full bg-white/20"></div>
@@ -117,8 +121,16 @@
             <div class="p-4">
                 <h3 class="font-bold text-base text-gray-800 mb-1.5" th:text="${dish.dishName}">菜品名称</h3>
                 <p class="text-gray-500 text-xs mb-3 line-clamp-2 leading-relaxed" th:text="${dish.description}">描述</p>
-                <div class="flex items-center justify-between">
+                <div class="flex items-center justify-between" th:if="${dish.status.name() == 'AVAILABLE'}">
                     <span class="text-primary font-black text-lg" th:text="'¥' + ${dish.price}">¥28</span>
+                    <button th:attr="data-id=${dish.id}, data-name=${dish.dishName}, data-price=${dish.price}"
+                            onclick="addToCart(this)" class="w-9 h-9 rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white flex items-center justify-center shadow-md hover:shadow-lg hover:scale-110 active:scale-95 transition-all">
+                        <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                    </button>
+                </div>
+                <div class="flex items-center justify-between" th:unless="${dish.status.name() == 'AVAILABLE'}">
+                    <span class="text-stone-400 font-bold text-lg" th:text="'¥' + ${dish.price}">¥28</span>
+                    <span class="text-stone-400 text-xs">已下架</span>
                 </div>
             </div>
         </div>
@@ -147,6 +159,177 @@
         <p class="text-gray-600 leading-relaxed text-sm" th:text="${shop.introduction}">商家介绍...</p>
     </div>
 </div>
+
+<!-- Cart Sidebar Overlay -->
+<div id="cart-overlay" class="fixed inset-0 bg-black/40 z-[60] hidden opacity-0 transition-opacity duration-300" onclick="toggleCart()"></div>
+
+<!-- Cart Sidebar -->
+<div id="cart-sidebar" class="fixed top-0 right-0 h-full w-full max-w-md bg-white z-[70] shadow-2xl translate-x-full transition-transform duration-300 flex flex-col">
+    <!-- Cart Header -->
+    <div class="flex items-center justify-between px-6 py-5 border-b border-stone-100">
+        <h2 class="text-lg font-bold text-stone-800 flex items-center gap-2">
+            <svg class="w-6 h-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+            购物车
+        </h2>
+        <button onclick="toggleCart()" class="w-9 h-9 rounded-full hover:bg-stone-100 flex items-center justify-center text-stone-400 hover:text-stone-600 transition-all">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+    </div>
+
+    <!-- Cart Items -->
+    <div id="cart-items" class="flex-1 overflow-y-auto px-6 py-4">
+        <!-- Empty state -->
+        <div id="cart-empty" class="flex flex-col items-center justify-center h-full text-center">
+            <svg class="w-20 h-20 text-stone-200 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 100 4 2 2 0 000-4z"/></svg>
+            <p class="text-stone-400 font-medium">购物车是空的</p>
+            <p class="text-stone-300 text-sm mt-1">快去选购心仪的菜品吧</p>
+        </div>
+    </div>
+
+    <!-- Cart Footer -->
+    <div id="cart-footer" class="hidden border-t border-stone-100 px-6 py-5 bg-stone-50/50">
+        <div class="flex items-center justify-between mb-4">
+            <span class="text-stone-500 text-sm">合计</span>
+            <span class="text-2xl font-black text-primary" id="cart-total">¥0.00</span>
+        </div>
+        <button onclick="clearCart()" class="w-full btn-ghost py-3 text-sm mb-2">清空购物车</button>
+        <button onclick="submitOrder()" class="w-full btn-primary py-3 text-sm">提交订单</button>
+    </div>
+</div>
+
+<script>
+const CART_KEY = 'cart_' + [[${shop.id}]];
+let cart = JSON.parse(localStorage.getItem(CART_KEY) || '{}');
+
+function saveCart() {
+    localStorage.setItem(CART_KEY, JSON.stringify(cart));
+    updateCartUI();
+}
+
+function addToCart(btn) {
+    const id = btn.dataset.id;
+    const name = btn.dataset.name;
+    const price = parseFloat(btn.dataset.price);
+    if (!cart[id]) {
+        cart[id] = { id, name, price, qty: 0 };
+    }
+    cart[id].qty++;
+    saveCart();
+    // button animation
+    btn.classList.add('scale-90');
+    setTimeout(() => btn.classList.remove('scale-90'), 150);
+}
+
+function changeQty(id, delta) {
+    if (!cart[id]) return;
+    cart[id].qty += delta;
+    if (cart[id].qty <= 0) delete cart[id];
+    saveCart();
+}
+
+function removeFromCart(id) {
+    delete cart[id];
+    saveCart();
+}
+
+function clearCart() {
+    cart = {};
+    saveCart();
+}
+
+function updateCartUI() {
+    const badge = document.getElementById('cart-badge');
+    const itemsEl = document.getElementById('cart-items');
+    const emptyEl = document.getElementById('cart-empty');
+    const footerEl = document.getElementById('cart-footer');
+    const totalEl = document.getElementById('cart-total');
+
+    const entries = Object.values(cart);
+    const count = entries.reduce((s, i) => s + i.qty, 0);
+    const total = entries.reduce((s, i) => s + i.price * i.qty, 0);
+
+    // badge
+    if (count > 0) {
+        badge.textContent = count > 99 ? '99+' : count;
+        badge.classList.remove('hidden');
+    } else {
+        badge.classList.add('hidden');
+    }
+
+    // items
+    if (entries.length === 0) {
+        emptyEl.classList.remove('hidden');
+        footerEl.classList.add('hidden');
+        // remove old item elements
+        itemsEl.querySelectorAll('.cart-item').forEach(el => el.remove());
+        return;
+    }
+
+    emptyEl.classList.add('hidden');
+    footerEl.classList.remove('hidden');
+    totalEl.textContent = '¥' + total.toFixed(2);
+
+    // rebuild items
+    itemsEl.querySelectorAll('.cart-item').forEach(el => el.remove());
+    entries.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'cart-item flex items-center gap-4 py-4 border-b border-stone-50 last:border-0';
+        div.innerHTML = `
+            <div class="flex-1 min-w-0">
+                <h4 class="font-semibold text-stone-800 text-sm truncate">${item.name}</h4>
+                <p class="text-primary font-bold text-sm mt-0.5">¥${item.price.toFixed(2)}</p>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="changeQty('${item.id}', -1)" class="w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-500 hover:border-primary hover:text-primary hover:bg-orange-50 transition-all active:scale-90">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20 12H4"/></svg>
+                </button>
+                <span class="w-6 text-center font-bold text-stone-800 text-sm">${item.qty}</span>
+                <button onclick="changeQty('${item.id}', 1)" class="w-8 h-8 rounded-full border border-stone-200 flex items-center justify-center text-stone-500 hover:border-primary hover:text-primary hover:bg-orange-50 transition-all active:scale-90">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                </button>
+            </div>
+            <div class="text-right">
+                <span class="text-stone-800 font-bold text-sm">¥${(item.price * item.qty).toFixed(2)}</span>
+                <button onclick="removeFromCart('${item.id}')" class="block text-stone-300 hover:text-red-500 transition-colors mt-1">
+                    <svg class="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                </button>
+            </div>
+        `;
+        itemsEl.appendChild(div);
+    });
+}
+
+function toggleCart() {
+    const sidebar = document.getElementById('cart-sidebar');
+    const overlay = document.getElementById('cart-overlay');
+    const isOpen = !sidebar.classList.contains('translate-x-full');
+    if (isOpen) {
+        sidebar.classList.add('translate-x-full');
+        overlay.classList.add('opacity-0');
+        setTimeout(() => overlay.classList.add('hidden'), 300);
+    } else {
+        overlay.classList.remove('hidden');
+        requestAnimationFrame(() => {
+            overlay.classList.remove('opacity-0');
+            sidebar.classList.remove('translate-x-full');
+        });
+    }
+}
+
+function submitOrder() {
+    const entries = Object.values(cart);
+    if (entries.length === 0) return;
+    const total = entries.reduce((s, i) => s + i.price * i.qty, 0);
+    const items = entries.map(i => i.name + ' x' + i.qty).join('、');
+    if (confirm('确认下单？\n\n' + items + '\n\n合计：¥' + total.toFixed(2))) {
+        clearCart();
+        toggleCart();
+    }
+}
+
+// init
+updateCartUI();
+</script>
 
 </body>
 </html>

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>商家入驻 - 美食打卡</title>
+    <title>编辑店铺 - 美食打卡</title>
     <link rel="stylesheet" href="/css/common.css">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -29,9 +29,9 @@
                 <svg class="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
                 <span class="text-primary">美食打卡</span>
             </a>
-            <a href="/profile" class="text-sm text-stone-400 hover:text-primary transition-colors flex items-center gap-1">
+            <a href="/my-shops" class="text-sm text-stone-400 hover:text-primary transition-colors flex items-center gap-1">
                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                返回
+                返回我的店铺
             </a>
         </div>
     </div>
@@ -40,8 +40,8 @@
 <div class="relative bg-gradient-to-r from-orange-500 to-amber-500 text-white py-10 overflow-hidden">
     <svg class="absolute inset-0 w-full h-full opacity-10" xmlns="http://www.w3.org/2000/svg"><defs><pattern id="dots" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="1.5" fill="white"/></pattern></defs><rect width="100%" height="100%" fill="url(#dots)"/></svg>
     <div class="relative max-w-3xl mx-auto px-4">
-        <h1 class="text-3xl font-black mb-1">商家入驻申请</h1>
-        <p class="text-white/90 text-sm">填写以下信息，提交后等待管理员审核</p>
+        <h1 class="text-3xl font-black mb-1">编辑店铺信息</h1>
+        <p class="text-white/90 text-sm">修改店铺的基本信息</p>
     </div>
 </div>
 
@@ -55,24 +55,24 @@
     </div>
 
     <div class="card-premium p-6 md:p-8 animate-fade-in-up">
-        <form action="/shop/apply" method="post" class="space-y-5">
+        <form th:action="@{/shop/{id}/edit(id=${shop.id})}" method="post" class="space-y-5">
             <div>
                 <label class="block text-stone-600 font-medium text-sm mb-1.5">店铺名称 <span class="text-red-500">*</span></label>
-                <input type="text" name="shopName" required placeholder="请输入店铺名称" class="input-warm"/>
+                <input type="text" name="shopName" required th:value="${shop.shopName}" class="input-warm"/>
             </div>
             <div>
                 <label class="block text-stone-600 font-medium text-sm mb-1.5">店铺分类 <span class="text-red-500">*</span></label>
                 <select name="category" required class="input-warm">
                     <option value="">请选择分类</option>
-                    <option value="中餐">中餐</option>
-                    <option value="日料">日料</option>
-                    <option value="韩餐">韩餐</option>
-                    <option value="西餐">西餐</option>
-                    <option value="火锅">火锅</option>
-                    <option value="烧烤">烧烤</option>
-                    <option value="甜品饮品">甜品饮品</option>
-                    <option value="快餐小吃">快餐小吃</option>
-                    <option value="其他">其他</option>
+                    <option value="中餐" th:selected="${shop.category == '中餐'}">中餐</option>
+                    <option value="日料" th:selected="${shop.category == '日料'}">日料</option>
+                    <option value="韩餐" th:selected="${shop.category == '韩餐'}">韩餐</option>
+                    <option value="西餐" th:selected="${shop.category == '西餐'}">西餐</option>
+                    <option value="火锅" th:selected="${shop.category == '火锅'}">火锅</option>
+                    <option value="烧烤" th:selected="${shop.category == '烧烤'}">烧烤</option>
+                    <option value="甜品饮品" th:selected="${shop.category == '甜品饮品'}">甜品饮品</option>
+                    <option value="快餐小吃" th:selected="${shop.category == '快餐小吃'}">快餐小吃</option>
+                    <option value="其他" th:selected="${shop.category == '其他'}">其他</option>
                 </select>
             </div>
             <div>
@@ -81,10 +81,10 @@
                     <select id="province" required onchange="onProvinceChange()" class="input-warm">
                         <option value="">请选择省</option>
                     </select>
-                    <select id="city" required onchange="onCityChange()" class="input-warm">
+                    <select id="city" name="city" required onchange="onCityChange()" class="input-warm">
                         <option value="">请选择市</option>
                     </select>
-                    <select id="district" required class="input-warm">
+                    <select id="district" name="district" required class="input-warm">
                         <option value="">请选择区</option>
                     </select>
                 </div>
@@ -95,33 +95,29 @@
             </div>
             <div>
                 <label class="block text-stone-600 font-medium text-sm mb-1.5">详细地址 <span class="text-red-500">*</span></label>
-                <input type="hidden" name="location" id="location-hidden" required/>
-                <input type="hidden" name="city" id="city-hidden"/>
-                <input type="hidden" name="district" id="district-hidden"/>
-                <input type="text" id="detail-address" required placeholder="街道、门牌号等详细地址" class="input-warm" oninput="syncLocation()"/>
-                <p id="region-preview" class="mt-1.5 text-xs text-stone-400 hidden"></p>
+                <input type="text" name="location" required id="detail-address" th:value="${shop.location}" placeholder="完整地址" class="input-warm"/>
             </div>
             <div>
                 <label class="block text-stone-600 font-medium text-sm mb-1.5">联系电话 <span class="text-red-500">*</span></label>
-                <input type="text" name="phone" required placeholder="请输入联系电话" class="input-warm"/>
+                <input type="text" name="phone" required th:value="${shop.phone}" placeholder="请输入联系电话" class="input-warm"/>
             </div>
             <div class="grid grid-cols-2 gap-4">
                 <div>
                     <label class="block text-stone-600 font-medium text-sm mb-1.5">营业开始时间</label>
-                    <input type="text" name="startTime" placeholder="如: 09:00" class="input-warm"/>
+                    <input type="text" name="startTime" th:value="${shop.startTime}" placeholder="如: 09:00" class="input-warm"/>
                 </div>
                 <div>
                     <label class="block text-stone-600 font-medium text-sm mb-1.5">营业结束时间</label>
-                    <input type="text" name="endTime" placeholder="如: 22:00" class="input-warm"/>
+                    <input type="text" name="endTime" th:value="${shop.endTime}" placeholder="如: 22:00" class="input-warm"/>
                 </div>
             </div>
             <div>
                 <label class="block text-stone-600 font-medium text-sm mb-1.5">店铺简介</label>
-                <textarea name="introduction" rows="4" placeholder="请简要介绍您的店铺特色、主打菜品等..." class="input-warm resize-y"></textarea>
+                <textarea name="introduction" rows="4" placeholder="请简要介绍您的店铺特色、主打菜品等..." class="input-warm resize-y" th:text="${shop.introduction}"></textarea>
             </div>
             <div class="flex gap-3 pt-2">
-                <button type="submit" class="btn-primary flex-1 py-3 text-sm">提交申请</button>
-                <a href="/profile" class="btn-ghost flex-1 py-3 text-sm text-center block">取消</a>
+                <button type="submit" class="btn-primary flex-1 py-3 text-sm">保存修改</button>
+                <a href="/my-shops" class="btn-ghost flex-1 py-3 text-sm text-center block">取消</a>
             </div>
         </form>
     </div>
@@ -131,9 +127,6 @@
 const provinceEl = document.getElementById('province');
 const cityEl = document.getElementById('city');
 const districtEl = document.getElementById('district');
-const hiddenLocation = document.getElementById('location-hidden');
-const detailInput = document.getElementById('detail-address');
-const regionPreview = document.getElementById('region-preview');
 
 // 初始化省份
 Object.keys(REGION_DATA).forEach(p => {
@@ -155,7 +148,6 @@ function onProvinceChange() {
             cityEl.appendChild(opt);
         });
     }
-    syncLocation();
 }
 
 function onCityChange() {
@@ -170,50 +162,9 @@ function onCityChange() {
             districtEl.appendChild(opt);
         });
     }
-    syncLocation();
 }
 
-// 监听区变化
-districtEl.addEventListener('change', syncLocation);
-
-function getRegionText() {
-    const p = provinceEl.value;
-    const c = cityEl.value;
-    const d = districtEl.value;
-    const parts = [p, c, d].filter(v => v);
-    return parts.join('');
-}
-
-function syncLocation() {
-    const region = getRegionText();
-    const detail = detailInput.value.trim();
-    const full = region + detail;
-    hiddenLocation.value = full;
-    document.getElementById('city-hidden').value = cityEl.value;
-    document.getElementById('district-hidden').value = districtEl.value;
-
-    if (region) {
-        regionPreview.textContent = '当前地区：' + region;
-        regionPreview.classList.remove('hidden');
-    } else {
-        regionPreview.classList.add('hidden');
-    }
-}
-
-function setRegion(province, city, district) {
-    provinceEl.value = province;
-    onProvinceChange();
-    if (city) {
-        cityEl.value = city;
-        onCityChange();
-        if (district) {
-            districtEl.value = district;
-            syncLocation();
-        }
-    }
-}
-
-// 自动定位（使用浏览器 Geolocation + 高德逆地理编码免费接口）
+// 自动定位
 function autoLocate() {
     const btn = document.getElementById('locate-btn');
     btn.innerHTML = '<svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> 定位中...';
@@ -229,17 +180,22 @@ function autoLocate() {
         pos => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
-            // 使用高德地图 Web API 逆地理编码（免费，无需 key）
             fetch('https://restapi.amap.com/v3/geocode/regeo?key=a5c98b6acd681c5be08c4ae90ee5de2f&location=' + lng + ',' + lat)
                 .then(r => r.json())
                 .then(data => {
                     if (data.status === '1' && data.regeocode) {
                         const comp = data.regeocode.addressComponent;
                         const prov = comp.province;
-                        const city = comp.city || comp.province; // 直辖市 city 为空
+                        const city = comp.city || comp.province;
                         const dist = comp.district;
                         if (REGION_DATA[prov]) {
-                            setRegion(prov, city, dist);
+                            provinceEl.value = prov;
+                            onProvinceChange();
+                            if (city) {
+                                cityEl.value = city;
+                                onCityChange();
+                                if (dist) districtEl.value = dist;
+                            }
                         } else {
                             alert('未能匹配到对应的行政区划，请手动选择');
                         }
@@ -266,6 +222,31 @@ function resetLocateBtn() {
     btn.innerHTML = '<svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg> 自动定位当前地区';
     btn.disabled = false;
 }
+
+// 回显已有的 city/district
+(function initRegion() {
+    const savedCity = /*[[${shop.city}]]*/ '';
+    const savedDistrict = /*[[${shop.district}]]*/ '';
+    if (!savedCity) return;
+    // 遍历省份查找包含该城市（去省市前缀）的省
+    for (const prov of Object.keys(REGION_DATA)) {
+        const cities = Object.keys(REGION_DATA[prov]);
+        // city 字段存储的是完整市名（如"杭州市"），需要匹配
+        const matchedCity = cities.find(c => c === savedCity || c + '市' === savedCity || c.replace(/市$/, '') === savedCity.replace(/市$/, ''));
+        if (matchedCity) {
+            provinceEl.value = prov;
+            onProvinceChange();
+            cityEl.value = matchedCity;
+            onCityChange();
+            if (savedDistrict && REGION_DATA[prov][matchedCity]) {
+                const dists = REGION_DATA[prov][matchedCity];
+                const matchedDist = dists.find(d => d === savedDistrict || d + '区' === savedDistrict);
+                if (matchedDist) districtEl.value = matchedDist;
+            }
+            break;
+        }
+    }
+})();
 
 // 表单提交前验证
 document.querySelector('form').addEventListener('submit', function(e) {

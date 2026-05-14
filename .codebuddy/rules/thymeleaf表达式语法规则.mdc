@@ -1,0 +1,26 @@
+---
+description: 
+alwaysApply: true
+enabled: true
+updatedAt: 2026-05-13T16:12:23.882Z
+provider: 
+---
+
+# Thymeleaf 表达式核心规则文档
+
+## 文档说明
+
+本文档整理了 Thymeleaf 模板引擎表达式语法的核心规则，帮助开发者快速定位和解决常见的表达式错误。
+
+---
+
+## 一、黄金法则（最重要）
+
+> **所有表达式必须完整地写在 `${}` 或 `*{}` 内部**
+
+### 正确写法 ✅
+
+```html
+<p th:text="${user.name}"></p>
+<p th:text="${'Hello ' + user.name}"></p>
+<p th:text="${|Hello ${user.name}|}"></p>

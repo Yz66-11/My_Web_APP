@@ -37,6 +37,13 @@ public class AdminController {
 
     // ==================== Shop Review ====================
 
+    @GetMapping("/shops")
+    public String adminShops(Model model) {
+        model.addAttribute("approvedShops", shopService.getApprovedShops());
+        model.addAttribute("pendingShopCount", shopService.countPending());
+        return "admin/shops";
+    }
+
     @PostMapping("/shops/{id}/approve")
     public String approveShop(@PathVariable Long id) {
         shopService.approveShop(id);
@@ -47,6 +54,12 @@ public class AdminController {
     public String rejectShop(@PathVariable Long id) {
         shopService.rejectShop(id);
         return "redirect:/admin";
+    }
+
+    @PostMapping("/shops/{id}/delete")
+    public String deleteShop(@PathVariable Long id) {
+        shopService.deleteShop(id);
+        return "redirect:/admin/shops";
     }
 
     // ==================== User Management ====================

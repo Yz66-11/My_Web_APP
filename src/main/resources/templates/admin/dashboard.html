@@ -60,7 +60,7 @@
                 <div class="text-3xl">&#127978;</div>
             </div>
         </a>
-        <a th:href="@{/admin}" class="stat-card bg-white rounded-xl shadow-sm border border-border p-5 no-underline">
+        <a th:href="@{/admin/shops}" class="stat-card bg-white rounded-xl shadow-sm border border-border p-5 no-underline">
             <div class="flex items-center justify-between">
                 <div>
                     <p class="text-gray-400 text-xs">已通过商家</p>
@@ -153,6 +153,14 @@
                         </div>
                         <span th:if="${pendingCount > 0}" class="bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center"
                               th:text="${pendingCount}">0</span>
+                    </a>
+                    <a th:href="@{/admin/shops}" class="nav-card flex items-center gap-3 px-4 py-3 rounded-lg border border-border hover:border-primary no-underline">
+                        <span class="text-xl">&#127978;</span>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-gray-800">商家管理</p>
+                            <p class="text-xs text-gray-400">管理已通过的商家</p>
+                        </div>
+                        <span class="text-gray-300">&rsaquo;</span>
                     </a>
                     <a th:href="@{/admin/comments}" class="nav-card flex items-center gap-3 px-4 py-3 rounded-lg border border-border hover:border-primary no-underline">
                         <span class="text-xl">&#128172;</span>

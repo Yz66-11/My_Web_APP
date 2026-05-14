@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商家管理 - 管理后台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: { extend: { colors: { primary: '#ea580c', accent: '#f97316', muted: '#f5f5f5', 'muted-foreground': '#737373', border: '#e5e5e5' }}}
+        }
+    </script>
+</head>
+<body class="bg-gray-50 min-h-screen">
+
+<!-- Nav -->
+<nav class="bg-white shadow-sm border-b border-border sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto px-4">
+        <div class="flex justify-between items-center h-14">
+            <div class="flex items-center gap-3">
+                <a class="text-xl font-bold text-primary" href="/admin">&#9881; 管理后台</a>
+                <span class="text-gray-300">|</span>
+                <a class="text-sm text-gray-500 hover:text-primary transition-colors" href="/">返回前台</a>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+                <span class="text-gray-500">管理员：<strong class="text-gray-700" th:text="${#authentication.name}"></strong></span>
+                <form action="/logout" method="post">
+                    <button type="submit" class="text-red-500 hover:text-red-700 transition-colors font-medium">退出</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-6xl mx-auto px-4 py-6">
+
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-sm text-gray-400 mb-6">
+        <a href="/admin" class="hover:text-primary transition-colors">后台首页</a>
+        <span>&rsaquo;</span>
+        <span class="text-gray-700 font-medium">商家管理</span>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-sm border border-border">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+            <div>
+                <h2 class="text-base font-bold text-gray-800">已通过商家</h2>
+                <p class="text-xs text-gray-400 mt-0.5">共 <span th:text="${#lists.size(approvedShops)}">0</span> 家已审核通过的商家</p>
+            </div>
+            <a th:href="@{/admin}" class="text-sm text-gray-400 hover:text-primary transition-colors">&larr; 返回后台</a>
+        </div>
+        <div class="p-5">
+            <div th:if="${#lists.isEmpty(approvedShops)}" class="text-center py-12 text-gray-400 text-sm">
+                &#127978; 暂无已通过的商家
+            </div>
+            <div class="overflow-x-auto">
+                <table class="w-full" th:if="${!#lists.isEmpty(approvedShops)}">
+                    <thead>
+                        <tr class="text-xs text-gray-400 uppercase border-b border-border">
+                            <th class="text-left py-3 px-3 font-medium">店铺名称</th>
+                            <th class="text-left py-3 px-3 font-medium">分类</th>
+                            <th class="text-left py-3 px-3 font-medium">所在地区</th>
+                            <th class="text-left py-3 px-3 font-medium">联系电话</th>
+                            <th class="text-left py-3 px-3 font-medium">店主</th>
+                            <th class="text-left py-3 px-3 font-medium">审核时间</th>
+                            <th class="text-right py-3 px-3 font-medium">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="shop : ${approvedShops}" class="border-b border-border/50 hover:bg-gray-50 transition-colors">
+                            <td class="py-3 px-3">
+                                <span class="text-sm font-medium text-gray-800" th:text="${shop.shopName}">-</span>
+                            </td>
+                            <td class="py-3 px-3">
+                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full" th:text="${shop.category ?: '-'}">-</span>
+                            </td>
+                            <td class="py-3 px-3">
+                                <span class="text-sm text-gray-600" th:text="${shop.city + ' ' + shop.district}">-</span>
+                            </td>
+                            <td class="py-3 px-3">
+                                <span class="text-sm text-gray-600" th:text="${shop.phone}">-</span>
+                            </td>
+                            <td class="py-3 px-3">
+                                <span class="text-sm text-gray-600" th:text="${shop.owner != null ? shop.owner.username : '-'}">-</span>
+                            </td>
+                            <td class="py-3 px-3">
+                                <span class="text-xs text-gray-400" th:text="${shop.updatedAt != null ? #temporals.format(shop.updatedAt, 'yyyy-MM-dd') : '-'}">-</span>
+                            </td>
+                            <td class="py-3 px-3 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <a th:href="@{/merchant/{id}(id=${shop.id})}" target="_blank"
+                                       class="text-xs text-blue-500 hover:text-blue-700 transition-colors">查看</a>
+                                    <form th:action="@{/admin/shops/{id}/delete(id=${shop.id})}" method="post"
+                                          onsubmit="return confirm('确认删除该商家？此操作不可恢复！')">
+                                        <button type="submit" class="text-xs text-red-400 hover:text-red-600 transition-colors">删除</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

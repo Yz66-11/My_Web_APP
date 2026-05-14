@@ -144,7 +144,7 @@
             暂无评论，快来抢沙发
         </div>
         <div th:each="c, iter : ${comments}" class="flex gap-3 px-5 py-4 border-b border-stone-50 last:border-b-0 animate-fade-in-up"
-             th:style="'animation-delay:' + ${iter.index * 0.05}s">
+             th:style="${'animation-delay:' + (iter.index * 0.05) + 's'}">
             <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ring-2 ring-indigo-100"
                  th:text="${c.author == null ? 'U' : (#strings.isEmpty(c.author.name) ? (#strings.isEmpty(c.author.username) ? 'U' : #strings.substring(c.author.username, 0, 1)) : #strings.substring(c.author.name, 0, 1))}">U</div>
             <div class="flex-1 min-w-0">
