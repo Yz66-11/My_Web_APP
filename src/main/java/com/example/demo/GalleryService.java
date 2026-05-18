@@ -13,13 +13,16 @@ public class GalleryService {
     private final DishRepository dishRepository;
     private final GalleryUnlockRepository unlockRepository;
     private final UserRepository userRepository;
+    private final ShopService shopService;
 
     public GalleryService(ShopRepository shopRepository, DishRepository dishRepository,
-                          GalleryUnlockRepository unlockRepository, UserRepository userRepository) {
+                          GalleryUnlockRepository unlockRepository, UserRepository userRepository,
+                          ShopService shopService) {
         this.shopRepository = shopRepository;
         this.dishRepository = dishRepository;
         this.unlockRepository = unlockRepository;
         this.userRepository = userRepository;
+        this.shopService = shopService;
     }
 
     // ==================== City Level ====================
@@ -31,7 +34,7 @@ public class GalleryService {
 
         List<CityView> cities = new ArrayList<>();
         for (String cityName : cityNames) {
-            List<Shop> shops = shopRepository.findByStatusAndCity(Shop.ShopStatus.APPROVED, cityName);
+            List<Shop> shops = shopService.getActiveShopsByCity(cityName);
             if (shops.isEmpty()) continue;
 
             Set<String> districts = new LinkedHashSet<>();
@@ -41,6 +44,7 @@ public class GalleryService {
 
             for (Shop shop : shops) {
                 if (shop.getDistrict() != null) districts.add(shop.getDistrict());
+                if (shop.getStatus() == Shop.ShopStatus.CLOSED) continue; // 闭店不计入可解锁统计
                 List<Dish> dishes = dishRepository.findByShopIdAndStatus(shop.getId(), Dish.DishStatus.AVAILABLE);
                 totalDishes += dishes.size();
                 boolean shopHasUnlock = false;
@@ -71,13 +75,13 @@ public class GalleryService {
 
         List<DistrictView> districts = new ArrayList<>();
         for (String districtName : districtNames) {
-            List<Shop> shops = shopRepository.findByStatusAndCityAndDistrict(
-                    Shop.ShopStatus.APPROVED, city, districtName);
+            List<Shop> shops = shopService.getActiveShopsByCityAndDistrict(city, districtName);
             int totalDishes = 0;
             int unlockedDishes = 0;
             int unlockedShops = 0;
 
             for (Shop shop : shops) {
+                if (shop.getStatus() == Shop.ShopStatus.CLOSED) continue;
                 List<Dish> dishes = dishRepository.findByShopIdAndStatus(shop.getId(), Dish.DishStatus.AVAILABLE);
                 totalDishes += dishes.size();
                 boolean shopHasUnlock = false;
@@ -100,8 +104,7 @@ public class GalleryService {
     // ==================== Shop Level ====================
 
     public ShopPageView getShops(Long userId, String city, String district) {
-        List<Shop> shops = shopRepository.findByStatusAndCityAndDistrict(
-                Shop.ShopStatus.APPROVED, city, district);
+        List<Shop> shops = shopService.getActiveShopsByCityAndDistrict(city, district);
         Set<Long> unlockedDishIds = new HashSet<>(unlockRepository.findUnlockedDishIdsByUserId(userId));
 
         List<ShopView> shopViews = new ArrayList<>();
@@ -111,7 +114,8 @@ public class GalleryService {
             for (Dish dish : dishes) {
                 if (unlockedDishIds.contains(dish.getId())) unlockedCount++;
             }
-            shopViews.add(new ShopView(shop, dishes.size(), unlockedCount));
+            boolean closed = shop.getStatus() == Shop.ShopStatus.CLOSED;
+            shopViews.add(new ShopView(shop, dishes.size(), unlockedCount, closed));
         }
 
         return new ShopPageView(city, district, shopViews);
@@ -122,7 +126,7 @@ public class GalleryService {
     public DishPageView getDishes(Long userId, Long shopId) {
         Shop shop = shopRepository.findById(shopId)
                 .orElseThrow(() -> new RuntimeException("店铺不存在"));
-        List<Dish> dishes = dishRepository.findByShopIdAndStatus(shopId, Dish.DishStatus.AVAILABLE);
+        List<Dish> dishes = dishRepository.findByShopId(shopId);
         Set<Long> unlockedDishIds = new HashSet<>(unlockRepository.findUnlockedDishIdsByUserId(userId));
         Map<Long, String> unlockImageMap = buildUnlockImageMap(userId);
 
@@ -130,7 +134,8 @@ public class GalleryService {
         for (Dish dish : dishes) {
             boolean unlocked = unlockedDishIds.contains(dish.getId());
             String imageUrl = getDisplayImage(unlocked, dish, unlockImageMap);
-            dishViews.add(new DishView(dish, unlocked, imageUrl));
+            boolean unavailable = dish.getStatus() == Dish.DishStatus.UNAVAILABLE;
+            dishViews.add(new DishView(dish, unlocked, unavailable, imageUrl));
         }
 
         return new DishPageView(shop, dishViews);
@@ -144,7 +149,8 @@ public class GalleryService {
         Set<Long> unlockedDishIds = new HashSet<>(unlockRepository.findUnlockedDishIdsByUserId(userId));
         Map<Long, String> unlockImageMap = buildUnlockImageMap(userId);
 
-        List<Shop> allShops = shopRepository.findByStatus(Shop.ShopStatus.APPROVED);
+        List<Shop> allShops = new ArrayList<>(shopRepository.findByStatus(Shop.ShopStatus.APPROVED));
+        allShops.addAll(shopRepository.findByStatus(Shop.ShopStatus.CLOSED));
         List<SearchResultView> results = new ArrayList<>();
 
         for (Shop shop : allShops) {
@@ -153,7 +159,7 @@ public class GalleryService {
                     || (shop.getCity() != null && shop.getCity().toLowerCase().contains(kw))
                     || (shop.getDistrict() != null && shop.getDistrict().toLowerCase().contains(kw));
 
-            List<Dish> dishes = dishRepository.findByShopIdAndStatus(shop.getId(), Dish.DishStatus.AVAILABLE);
+            List<Dish> dishes = dishRepository.findByShopId(shop.getId());
             List<DishView> matchedDishes = new ArrayList<>();
 
             for (Dish dish : dishes) {
@@ -162,7 +168,8 @@ public class GalleryService {
                 if (shopMatch || dishMatch) {
                     boolean unlocked = unlockedDishIds.contains(dish.getId());
                     String imageUrl = getDisplayImage(unlocked, dish, unlockImageMap);
-                    matchedDishes.add(new DishView(dish, unlocked, imageUrl));
+                    boolean unavailable = dish.getStatus() == Dish.DishStatus.UNAVAILABLE;
+                    matchedDishes.add(new DishView(dish, unlocked, unavailable, imageUrl));
                 }
             }
 
@@ -281,36 +288,50 @@ public class GalleryService {
         private final Shop shop;
         private final int totalDishes;
         private final int unlockedDishes;
+        private final boolean closed;
 
         public ShopView(Shop shop, int totalDishes, int unlockedDishes) {
+            this(shop, totalDishes, unlockedDishes, shop.getStatus() == Shop.ShopStatus.CLOSED);
+        }
+
+        public ShopView(Shop shop, int totalDishes, int unlockedDishes, boolean closed) {
             this.shop = shop;
             this.totalDishes = totalDishes;
             this.unlockedDishes = unlockedDishes;
+            this.closed = closed;
         }
 
         public Shop getShop() { return shop; }
         public int getTotalDishes() { return totalDishes; }
         public int getUnlockedDishes() { return unlockedDishes; }
+        public boolean isClosed() { return closed; }
         public double getProgress() { return totalDishes == 0 ? 0 : (double) unlockedDishes / totalDishes * 100; }
     }
 
     public static class DishView {
         private final Dish dish;
         private final boolean unlocked;
+        private final boolean unavailable;
         private final String imageUrl;
 
         public DishView(Dish dish, boolean unlocked) {
-            this(dish, unlocked, null);
+            this(dish, unlocked, false, null);
         }
 
         public DishView(Dish dish, boolean unlocked, String imageUrl) {
+            this(dish, unlocked, false, imageUrl);
+        }
+
+        public DishView(Dish dish, boolean unlocked, boolean unavailable, String imageUrl) {
             this.dish = dish;
             this.unlocked = unlocked;
+            this.unavailable = unavailable;
             this.imageUrl = imageUrl;
         }
 
         public Dish getDish() { return dish; }
         public boolean isUnlocked() { return unlocked; }
+        public boolean isUnavailable() { return unavailable; }
         /** 打卡照片 URL（已解锁时优先展示），若为空则使用 dish.getImageUrl() 或默认图标 */
         public String getImageUrl() { return imageUrl; }
     }

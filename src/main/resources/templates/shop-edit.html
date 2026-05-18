@@ -6,6 +6,7 @@
     <title>编辑店铺 - 美食打卡</title>
     <link rel="stylesheet" href="/css/common.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="/js/app.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -54,7 +55,7 @@
         <p class="text-sm" th:text="${error}"></p>
     </div>
 
-    <div class="card-premium p-6 md:p-8 animate-fade-in-up">
+    <div class="card-premium p-6 md:p-8 animate-fade-in-up dish-card">
         <form th:action="@{/shop/{id}/edit(id=${shop.id})}" method="post" class="space-y-5">
             <div>
                 <label class="block text-stone-600 font-medium text-sm mb-1.5">店铺名称 <span class="text-red-500">*</span></label>
@@ -116,8 +117,8 @@
                 <textarea name="introduction" rows="4" placeholder="请简要介绍您的店铺特色、主打菜品等..." class="input-warm resize-y" th:text="${shop.introduction}"></textarea>
             </div>
             <div class="flex gap-3 pt-2">
-                <button type="submit" class="btn-primary flex-1 py-3 text-sm">保存修改</button>
-                <a href="/my-shops" class="btn-ghost flex-1 py-3 text-sm text-center block">取消</a>
+                <button type="submit" class="btn-primary flex-1 py-3 text-sm btn-press">保存修改</button>
+                <a href="/my-shops" class="btn-ghost flex-1 py-3 text-sm text-center block btn-press">取消</a>
             </div>
         </form>
     </div>

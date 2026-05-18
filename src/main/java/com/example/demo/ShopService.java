@@ -120,6 +120,51 @@ public class ShopService {
         shopRepository.deleteById(shopId);
     }
 
+    // ==================== 退驻 ====================
+
+    public void requestWithdrawal(Long shopId) {
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new RuntimeException("店铺不存在"));
+        if (shop.getStatus() != Shop.ShopStatus.APPROVED) {
+            throw new RuntimeException("仅已通过的店铺可以申请退驻");
+        }
+        shop.setStatus(Shop.ShopStatus.WITHDRAW_PENDING);
+        shopRepository.save(shop);
+    }
+
+    public List<Shop> getWithdrawPendingShops() {
+        return shopRepository.findByStatusOrderByUpdatedAtDesc(Shop.ShopStatus.WITHDRAW_PENDING);
+    }
+
+    public long countWithdrawPending() {
+        return shopRepository.countByStatus(Shop.ShopStatus.WITHDRAW_PENDING);
+    }
+
+    public void approveWithdrawal(Long shopId) {
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new RuntimeException("店铺不存在"));
+        // 保留菜品和打卡记录，仅标记为已闭店（供图鉴正常展示）
+        shop.setStatus(Shop.ShopStatus.CLOSED);
+        shopRepository.save(shop);
+    }
+
+    public void rejectWithdrawal(Long shopId) {
+        Shop shop = shopRepository.findById(shopId)
+                .orElseThrow(() -> new RuntimeException("店铺不存在"));
+        shop.setStatus(Shop.ShopStatus.APPROVED);
+        shopRepository.save(shop);
+    }
+
+    // ==================== 图鉴查询（含已闭店） ====================
+
+    public List<Shop> getActiveShopsByCity(String city) {
+        return shopRepository.findByActiveStatusAndCity(city);
+    }
+
+    public List<Shop> getActiveShopsByCityAndDistrict(String city, String district) {
+        return shopRepository.findByActiveStatusAndCityAndDistrict(city, district);
+    }
+
     public List<Shop> getApprovedShops() {
         return shopRepository.findByStatus(Shop.ShopStatus.APPROVED);
     }

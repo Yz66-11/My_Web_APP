@@ -6,6 +6,7 @@
     <title>美食社区 - 美食打卡</title>
     <link rel="stylesheet" href="/css/common.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="/js/app.js"></script>
     <script>
         tailwind.config = {
             theme: {
@@ -24,7 +25,7 @@
         .post-card:hover { box-shadow: 0 4px 16px rgba(249, 115, 22, 0.08), 0 12px 32px rgba(28, 25, 23, 0.08); transform: translateY(-3px); border-color: var(--border-warm); }
     </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen bg-bg-warm page-enter">
 
 <!-- Nav -->
 <nav class="nav-glass sticky top-0 z-50">
@@ -58,7 +59,7 @@
          th:text="${message}">提示信息</div>
 
     <!-- Tab Bar + Search -->
-    <div class="card-premium mb-6 p-4">
+    <div class="card-premium mb-6 p-4 dish-card">
         <div class="flex items-center gap-2 mb-3">
             <a th:href="@{/posts}" class="px-4 py-1.5 rounded-full text-sm font-medium transition-all duration-200"
                th:classappend="${currentTab == 'latest'} ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-sm' : 'bg-orange-50 text-stone-500 hover:bg-orange-100'">
@@ -72,7 +73,7 @@
                th:classappend="${currentTab == 'my'} ? 'bg-gradient-to-r from-primary to-primary-dark text-white shadow-sm' : 'bg-orange-50 text-stone-500 hover:bg-orange-100'">
                 我的帖子
             </a>
-            <a href="/post/create" class="btn-primary ml-auto px-4 py-1.5 text-sm inline-flex items-center gap-1">
+            <a href="/post/create" class="btn-primary ml-auto px-4 py-1.5 text-sm inline-flex items-center gap-1 btn-press">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
                 发帖
             </a>

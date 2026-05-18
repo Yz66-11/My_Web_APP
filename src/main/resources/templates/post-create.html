@@ -6,6 +6,7 @@
     <title>发帖 - 美食打卡</title>
     <link rel="stylesheet" href="/css/common.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="/js/app.js"></script>
     <script>
         tailwind.config = {
             theme: { extend: { colors: { primary: '#F97316', 'primary-dark': '#EA580C', 'primary-light': '#FDBA74', accent: '#FBBF24', 'bg-warm': '#FFFAF5' }, fontFamily: { sans: ['Noto Sans SC', 'sans-serif'] } }}
@@ -30,7 +31,7 @@
 </nav>
 
 <div class="max-w-3xl mx-auto px-4 py-8">
-    <div class="card-premium p-6 md:p-8 animate-fade-in-up">
+    <div class="card-premium p-6 md:p-8 animate-fade-in-up dish-card">
         <div class="flex items-center gap-3 mb-2">
             <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-amber-400 flex items-center justify-center">
                 <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
@@ -66,8 +67,8 @@
             </div>
 
             <div class="flex gap-3 pt-2">
-                <a href="/posts" class="btn-ghost flex-1 text-center py-2.5 text-sm">取消</a>
-                <button type="submit" class="btn-primary flex-1 py-2.5 text-sm">提交审核</button>
+                <a href="/posts" class="btn-ghost flex-1 text-center py-2.5 text-sm btn-press">取消</a>
+                <button type="submit" class="btn-primary flex-1 py-2.5 text-sm btn-press">提交审核</button>
             </div>
         </form>
     </div>

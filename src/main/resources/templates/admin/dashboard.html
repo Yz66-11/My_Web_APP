@@ -4,7 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理后台 - 美食打卡</title>
+    <link rel="stylesheet" href="/css/common.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="/js/app.js"></script>
     <script>
         tailwind.config = {
             theme: { extend: { colors: { primary: '#ea580c', accent: '#f97316', muted: '#f5f5f5', 'muted-foreground': '#737373', border: '#e5e5e5' }}}
@@ -17,7 +19,7 @@
         .nav-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
     </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
+<body class="bg-bg-warm min-h-screen page-enter">
 
 <!-- Nav -->
 <nav class="bg-white shadow-sm border-b border-border sticky top-0 z-50">
@@ -68,6 +70,15 @@
                     <h2 class="text-2xl font-bold text-gray-800 mt-1" th:text="${pendingShopCount}">0</h2>
                 </div>
                 <div class="text-3xl">&#127978;</div>
+            </div>
+        </a>
+        <a th:href="@{/admin}" class="stat-card bg-white rounded-xl shadow-sm border border-border p-5 no-underline">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-gray-400 text-xs">待审核退驻</p>
+                    <h2 class="text-2xl font-bold text-gray-800 mt-1" th:text="${withdrawPendingShopCount}">0</h2>
+                </div>
+                <div class="text-3xl">&#128683;</div>
             </div>
         </a>
         <a th:href="@{/admin/shops}" class="stat-card bg-white rounded-xl shadow-sm border border-border p-5 no-underline">
@@ -136,6 +147,58 @@
                                     </form>
                                     <form th:action="@{/admin/shops/{id}/reject(id=${shop.id})}" method="post"
                                           onsubmit="return confirm('确认拒绝该商家入驻申请？')">
+                                        <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                                            &#10060; 拒绝
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 退驻审核 -->
+            <div class="bg-white rounded-xl shadow-sm border border-border mt-6">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-border">
+                    <div>
+                        <h2 class="text-base font-bold text-gray-800">退驻审核</h2>
+                        <p class="text-xs text-gray-400 mt-0.5">审核商家退店申请</p>
+                    </div>
+                    <span th:if="${withdrawPendingShopCount > 0}" class="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full font-medium"
+                          th:text="${withdrawPendingShopCount} + ' 条待审'">0</span>
+                </div>
+                <div class="p-5">
+                    <div th:if="${#lists.isEmpty(withdrawPendingShops)}" class="text-center py-8 text-gray-400 text-sm">
+                        &#9989; 暂无待审核的退驻申请
+                    </div>
+                    <div class="space-y-3" th:each="shop : ${withdrawPendingShops}">
+                        <div class="border border-border rounded-lg p-4 hover:bg-gray-50 transition-colors">
+                            <div class="flex items-start justify-between">
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="text-base font-bold text-gray-800 mb-2" th:text="${shop.shopName}">店铺名称</h3>
+                                    <div class="grid grid-cols-2 gap-2 text-sm text-gray-600">
+                                        <p>&#128193; <span th:text="${shop.category ?: '未分类'}">分类</span></p>
+                                        <p>&#128205; <span th:text="${shop.location}">地址</span></p>
+                                        <p>&#128222; <span th:text="${shop.phone}">电话</span></p>
+                                        <p>&#128339; <span th:text="${shop.startTime + ' - ' + shop.endTime}">营业时间</span></p>
+                                    </div>
+                                    <p class="text-xs text-gray-400 mt-2">
+                                        店主：<span th:text="${shop.owner.username}">-</span>
+                                        &nbsp;|&nbsp;
+                                        申请时间：<span th:text="${#temporals.format(shop.updatedAt, 'yyyy-MM-dd HH:mm')}">时间</span>
+                                    </p>
+                                    <p class="text-xs text-amber-600 mt-1">&#9888; 审核通过后将删除所有菜品，店铺标记为闭店</p>
+                                </div>
+                                <div class="flex gap-2 ml-4 shrink-0">
+                                    <form th:action="@{/admin/shops/{id}/approve-withdrawal(id=${shop.id})}" method="post"
+                                          onsubmit="return confirm('确认通过退驻申请？这将删除该店铺的所有菜品，店铺将标记为闭店。')">
+                                        <button type="submit" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
+                                            &#9989; 通过
+                                        </button>
+                                    </form>
+                                    <form th:action="@{/admin/shops/{id}/reject-withdrawal(id=${shop.id})}" method="post"
+                                          onsubmit="return confirm('确认拒绝退驻申请？店铺将保持正常营业状态。')">
                                         <button type="submit" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
                                             &#10060; 拒绝
                                         </button>

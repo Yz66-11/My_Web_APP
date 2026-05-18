@@ -105,6 +105,10 @@ public class UserService {
         userRepository.save(user);
     }
 
+    public void saveUser(User user) {
+        userRepository.save(user);
+    }
+
     public void changeRole(Long userId, User.Role role) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
@@ -151,5 +155,15 @@ public class UserService {
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
         user.setRole(user.getRole() == User.Role.USER ? User.Role.ADMIN : User.Role.USER);
         userRepository.save(user);
+    }
+
+    // ==================== 统计 ====================
+
+    public long countUserCheckins(Long userId) {
+        return galleryUnlockRepository.countByUserId(userId);
+    }
+
+    public long countUserFavorites(Long userId) {
+        return postFavoriteRepository.findByUserIdOrderByCreatedAtDesc(userId).size();
     }
 }

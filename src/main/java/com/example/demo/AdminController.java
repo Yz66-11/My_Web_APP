@@ -30,7 +30,9 @@ public class AdminController {
         model.addAttribute("totalUsers", userService.countUsers());
         model.addAttribute("approvedShopCount", shopService.countApproved());
         model.addAttribute("pendingShopCount", shopService.countPending());
+        model.addAttribute("withdrawPendingShopCount", shopService.countWithdrawPending());
         model.addAttribute("pendingShops", shopService.getPendingShops());
+        model.addAttribute("withdrawPendingShops", shopService.getWithdrawPendingShops());
         model.addAttribute("users", userService.getAllUsers());
         model.addAttribute("pendingCount", postService.countPendingPosts());
         if (success != null && !success.isBlank()) {
@@ -64,6 +66,30 @@ public class AdminController {
     public String deleteShop(@PathVariable Long id) {
         shopService.deleteShop(id);
         return "redirect:/admin/shops";
+    }
+
+    // ==================== Withdrawal Review ====================
+
+    @PostMapping("/shops/{id}/approve-withdrawal")
+    public String approveWithdrawal(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            shopService.approveWithdrawal(id);
+            redirectAttributes.addFlashAttribute("success", "退驻审核通过，该店铺已标记为闭店");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("error", "操作失败：" + e.getMessage());
+        }
+        return "redirect:/admin";
+    }
+
+    @PostMapping("/shops/{id}/reject-withdrawal")
+    public String rejectWithdrawal(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            shopService.rejectWithdrawal(id);
+            redirectAttributes.addFlashAttribute("success", "已拒绝退驻申请，店铺保持正常状态");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("error", "操作失败：" + e.getMessage());
+        }
+        return "redirect:/admin";
     }
 
     // ==================== User Management ====================

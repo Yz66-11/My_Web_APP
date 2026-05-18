@@ -173,8 +173,10 @@ public class MerchantController {
         }
 
         Optional<Shop> shopOpt = shopService.findById(shopId);
+        List<Dish> dishes = shopService.getDishesByShopId(shopId);
         model.addAttribute("shop", shopOpt.orElse(null));
         model.addAttribute("dish", dishOpt.get());
+        model.addAttribute("dishes", dishes);
         model.addAttribute("editMode", true);
         return "merchant-dishes";
     }
@@ -218,6 +220,22 @@ public class MerchantController {
         return "redirect:/merchant/" + shopId + "/dishes";
     }
 
+    // ==================== 退驻 ====================
+
+    @PostMapping("/merchant/{shopId}/withdraw")
+    public String requestWithdrawal(@PathVariable Long shopId,
+                                     Principal principal,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            verifyOwnership(shopId, principal);
+            shopService.requestWithdrawal(shopId);
+            redirectAttributes.addFlashAttribute("success", "退驻申请已提交，请等待管理员审核");
+        } catch (RuntimeException e) {
+            redirectAttributes.addFlashAttribute("error", "操作失败：" + e.getMessage());
+        }
+        return "redirect:/my-shops";
+    }
+
     /**
      * 验证当前用户是否为该店铺的店主
      */
@@ -228,6 +246,9 @@ public class MerchantController {
                 .orElseThrow(() -> new RuntimeException("店铺不存在"));
         if (shop.getOwner() == null || !shop.getOwner().getId().equals(user.getId())) {
             throw new RuntimeException("无权操作此店铺的菜品");
+        }
+        if (shop.getStatus() == Shop.ShopStatus.CLOSED) {
+            throw new RuntimeException("该店铺已闭店，不可管理");
         }
     }
 }

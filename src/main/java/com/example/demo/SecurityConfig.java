@@ -33,11 +33,13 @@ public class SecurityConfig {
                         .requestMatchers("/", "/index.html", "/login", "/register",
                                 "/forgot-password", "/verify-token",
                                 "/reset-password",
-                                "/css/**", "/js/**", "/images/**", "/h2-console/**").permitAll()
+                                "/css/**", "/js/**", "/images/**",
+                                "/uploads/**", "/h2-console/**").permitAll()
                         .requestMatchers("/admin/**").hasRole("ADMIN")
                         .requestMatchers("/merchants", "/merchant/**", "/profile",
                                 "/food-gallery", "/food-gallery/**", "/checkin", "/shop/**", "/my-shops",
-                                "/posts", "/post/**", "/update-profile", "/change-password"
+                                "/posts", "/post/**", "/update-profile", "/change-password",
+                                "/upload-avatar"
                                 ).authenticated()
                         .anyRequest().authenticated()
                 )

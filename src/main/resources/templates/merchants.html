@@ -5,6 +5,7 @@
     <title>商家列表 - 美食打卡</title>
     <link rel="stylesheet" href="/css/common.css">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="/js/app.js"></script>
     <script>
     tailwind.config = {
       theme: {
@@ -19,7 +20,7 @@
     }
     </script>
 </head>
-<body>
+<body class="bg-bg-warm page-enter">
 <!-- Navigation -->
 <nav class="nav-glass sticky top-0 z-50">
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
@@ -69,7 +70,7 @@
                 <input type="text" name="keyword" th:value="${keyword}" placeholder="搜索商家名称、分类、地址..."
                        class="input-warm !pl-12 !py-3.5 !rounded-full text-sm">
             </div>
-            <button type="submit" class="btn-primary px-6 py-3.5 text-sm whitespace-nowrap">
+            <button type="submit" class="btn-primary px-6 py-3.5 text-sm whitespace-nowrap btn-press">
                 <span class="flex items-center gap-1.5">
                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -86,7 +87,7 @@
     <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         <a th:each="merchant, iter : ${merchants}"
            th:href="@{/merchant/{id}(id=${merchant.id})}"
-           class="card-premium overflow-hidden block animate-fade-in-up"
+           class="card-premium overflow-hidden block animate-fade-in-up dish-card"
            th:style="${'animation-delay:' + (iter.index * 0.06) + 's'}">
             <!-- Image area with warm gradient -->
             <div class="h-48 bg-gradient-to-br from-orange-100 to-amber-200 flex items-center justify-center relative overflow-hidden">

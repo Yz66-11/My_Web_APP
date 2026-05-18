@@ -26,7 +26,7 @@
         .breadcrumb-link:hover { text-decoration: underline; }
     </style>
 </head>
-<body class="min-h-screen bg-bg-warm font-sans">
+<body class="min-h-screen bg-bg-warm font-sans page-enter">
 
 <!-- Navigation -->
 <nav class="nav-glass sticky top-0 z-50">
@@ -144,16 +144,17 @@
             <div th:each="result : ${searchResults}" class="mb-8 animate-fade-in-up">
                 <div class="flex items-center gap-3 mb-4">
                     <h3 class="text-lg font-bold text-stone-800" th:text="${result.shop.shopName}">店铺名</h3>
+                <span th:if="${result.shop.status.name() == 'CLOSED'}" class="text-xs bg-red-100 text-red-600 border border-red-200 rounded-full px-2 py-0.5 font-medium">闭店</span>
                 <span class="badge badge-primary" th:text="${result.shop.category}">分类</span>
                 <span class="text-xs text-stone-400" th:text="${result.shop.city} + ' ' + ${result.shop.district}">地址</span>
                 <a th:href="@{/food-gallery(shopId=${result.shop.id},city=${result.shop.city},district=${result.shop.district})}"
                    class="text-xs text-primary hover:underline ml-auto font-medium">查看全部 &rarr;</a>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                <div th:each="dv : ${result.dishes}" class="card-premium overflow-hidden"
+                <div th:each="dv : ${result.dishes}" class="card-premium overflow-hidden dish-card"
                      th:classappend="${!dv.unlocked} ? 'locked-card'">
                     <div class="h-24 bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center overflow-hidden relative">
-                        <img th:if="${dv.imageUrl}" th:src="${dv.imageUrl}" alt="菜品照片" class="w-full h-full object-cover" />
+                        <img th:if="${dv.imageUrl}" th:src="${dv.imageUrl}" alt="菜品照片" class="w-full h-full object-cover" loading="lazy" decoding="async" />
                         <span th:unless="${dv.imageUrl}" class="text-4xl">&#127860;</span>
                         <div th:if="${!dv.unlocked}" class="absolute inset-0 flex items-center justify-center bg-black/30 rounded-t-xl">
                             <svg class="w-7 h-7 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
@@ -163,6 +164,7 @@
                         <p class="text-sm font-semibold text-stone-800 truncate" th:text="${dv.dish.dishName}">菜品名</p>
                         <p class="text-xs mt-1" th:class="${dv.unlocked} ? 'text-emerald-600 font-medium' : 'text-stone-400'"
                            th:text="${dv.unlocked} ? '已解锁' : '未解锁'">状态</p>
+                        <span th:if="${dv.unavailable}" class="inline-block mt-1 text-xs bg-stone-100 text-stone-500 border border-stone-200 rounded-full px-2 py-0.5 font-medium">已下架</span>
                     </div>
                 </div>
             </div>
@@ -270,7 +272,10 @@
                         <div class="p-4 flex-1 min-w-0">
                             <div class="flex items-start justify-between gap-2 mb-1">
                                 <h3 class="text-lg font-bold text-stone-800 truncate" th:text="${sv.shop.shopName}">店铺名</h3>
-                                <span class="badge badge-primary shrink-0" th:text="${sv.shop.category}">分类</span>
+                                <div class="flex items-center gap-1 shrink-0">
+                                    <span th:if="${sv.closed}" class="badge text-xs bg-red-100 text-red-600 border border-red-200 rounded-full px-2 py-0.5 font-medium">闭店</span>
+                                    <span class="badge badge-primary" th:text="${sv.shop.category}">分类</span>
+                                </div>
                             </div>
                             <p class="text-xs text-stone-400 mb-2 line-clamp-2" th:text="${sv.shop.introduction}">简介</p>
                             <div class="text-xs text-stone-400 mb-2 flex items-center gap-1">
@@ -315,7 +320,10 @@
                     <span class="text-6xl">&#127978;</span>
                 </div>
                 <div class="flex-1">
-                    <h2 class="text-2xl font-bold text-stone-800 mb-2" th:text="${dishPage.shop.shopName}">店铺名</h2>
+                    <div class="flex items-center gap-2 mb-2">
+                        <h2 class="text-2xl font-bold text-stone-800" th:text="${dishPage.shop.shopName}">店铺名</h2>
+                        <span th:if="${dishPage.shop.status.name() == 'CLOSED'}" class="text-xs bg-red-100 text-red-600 border border-red-200 rounded-full px-2 py-0.5 font-medium">闭店</span>
+                    </div>
                     <p class="text-sm text-stone-400 mb-3" th:text="${dishPage.shop.introduction}">店铺简介</p>
                     <div class="flex flex-wrap gap-4 text-sm text-stone-500">
                         <span class="flex items-center gap-1">
@@ -346,12 +354,12 @@
         </h3>
         <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
             <div th:each="dv, iter : ${dishPage.dishes}"
-                 class="card-premium overflow-hidden"
+                 class="card-premium overflow-hidden dish-card"
                  th:classappend="${!dv.unlocked} ? 'locked-card' + (' animate-fade-in-up stagger-' + (${iter.index} % 6 + 1)) : (' animate-fade-in-up stagger-' + (${iter.index} % 6 + 1))">
                 <!-- Unlocked dish -->
                 <div th:if="${dv.unlocked}">
                     <div class="h-28 bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 flex items-center justify-center overflow-hidden">
-                        <img th:if="${dv.imageUrl}" th:src="${dv.imageUrl}" alt="菜品照片" class="w-full h-full object-cover" />
+                        <img th:if="${dv.imageUrl}" th:src="${dv.imageUrl}" alt="菜品照片" class="w-full h-full object-cover" loading="lazy" decoding="async" />
                         <span th:unless="${dv.imageUrl}" class="text-5xl">&#127858;</span>
                     </div>
                     <div class="p-3 text-center">
@@ -361,6 +369,7 @@
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
                             已解锁
                         </p>
+                        <span th:if="${dv.unavailable}" class="inline-block mt-1 text-xs bg-stone-100 text-stone-500 border border-stone-200 rounded-full px-2 py-0.5 font-medium">已下架</span>
                     </div>
                 </div>
                 <!-- Locked dish -->
@@ -370,13 +379,17 @@
                         <div class="absolute inset-0 flex items-center justify-center bg-black/15 rounded-t-xl">
                             <svg class="w-7 h-7 text-white/70" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         </div>
+                        <div th:if="${dv.unavailable}" class="absolute top-1 right-1">
+                            <span class="text-xs bg-stone-100 text-stone-500 border border-stone-200 rounded-full px-1.5 py-0.5 font-medium">已下架</span>
+                        </div>
                     </div>
                     <div class="p-3 text-center">
                         <p class="text-sm font-medium text-stone-400 truncate" th:text="${dv.dish.dishName}">菜品名</p>
-                        <a th:href="@{/checkin(dishId=${dv.dish.id}, shopId=${dishPage.shop.id}, city=${city}, district=${district})}"
-                           class="btn-primary w-full text-xs py-1.5 inline-block text-center">
+                        <a th:unless="${dv.unavailable}" th:href="@{/checkin(dishId=${dv.dish.id}, shopId=${dishPage.shop.id}, city=${city}, district=${district})}"
+                           class="btn-primary w-full text-xs py-1.5 inline-block text-center btn-press">
                             打卡解锁
                         </a>
+                        <p th:if="${dv.unavailable}" class="text-xs text-stone-400 mt-2">已下架，无法打卡</p>
                     </div>
                 </div>
             </div>

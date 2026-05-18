@@ -1,12 +1,17 @@
 package com.example.demo;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
+import org.springframework.security.core.context.SecurityContextHolder;
 import java.security.Principal;
 import java.util.Optional;
 import java.util.Random;
@@ -24,16 +29,22 @@ public class AuthController {
     private final GalleryService galleryService;
     private final ShopService shopService;
     private final DishRepository dishRepository;
+    private final GalleryUnlockRepository galleryUnlockRepository;
+
+    @Value("${app.upload.dir}")
+    private String uploadDir;
 
     public AuthController(UserService userService, PasswordEncoder passwordEncoder,
                           EmailService emailService, GalleryService galleryService,
-                          ShopService shopService, DishRepository dishRepository) {
+                          ShopService shopService, DishRepository dishRepository,
+                          GalleryUnlockRepository galleryUnlockRepository) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
         this.galleryService = galleryService;
         this.shopService = shopService;
         this.dishRepository = dishRepository;
+        this.galleryUnlockRepository = galleryUnlockRepository;
     }
 
     @GetMapping("/")
@@ -99,6 +110,7 @@ public class AuthController {
                               Model model, Principal principal) {
         if (principal != null) {
             userService.findByUsername(principal.getName()).ifPresent(user -> {
+                Long userId = user.getId();
                 model.addAttribute("username", user.getUsername());
                 model.addAttribute("email", user.getEmail());
                 model.addAttribute("name", user.getName());
@@ -107,6 +119,10 @@ public class AuthController {
                 model.addAttribute("age", user.getAge());
                 model.addAttribute("bio", user.getBio());
                 model.addAttribute("displayGender", user.getDisplayGender());
+                model.addAttribute("avatarUrl", user.getAvatarUrl());
+                model.addAttribute("checkinCount", galleryUnlockRepository.countByUserId(userId));
+                model.addAttribute("galleryCount", galleryUnlockRepository.countByUserId(userId));
+                model.addAttribute("favCount", userService.countUserFavorites(userId));
             });
         }
         if (success != null) model.addAttribute("success", success);
@@ -152,6 +168,51 @@ public class AuthController {
             return "redirect:/profile?error=" + java.net.URLEncoder.encode(
                     e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
+    }
+
+    @PostMapping("/delete-account")
+    public String deleteAccount(Principal principal, HttpServletRequest request) {
+        if (principal == null) {
+            return "redirect:/login";
+        }
+        try {
+            Long userId = userService.findByUsername(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("用户不存在")).getId();
+            userService.deleteUser(userId);
+            // 清除安全上下文并登出
+            SecurityContextHolder.clearContext();
+            request.getSession().invalidate();
+            return "redirect:/login?logout";
+        } catch (RuntimeException e) {
+            return "redirect:/profile?error=" + java.net.URLEncoder.encode(
+                    "注销失败：" + e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
+        }
+    }
+
+    @PostMapping("/upload-avatar")
+    public String uploadAvatar(@RequestParam("file") MultipartFile file,
+                                Principal principal, RedirectAttributes redirectAttributes) {
+        try {
+            if (file.isEmpty()) {
+                redirectAttributes.addFlashAttribute("error", "请选择图片");
+                return "redirect:/profile";
+            }
+            // 校验文件类型
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                redirectAttributes.addFlashAttribute("error", "只支持图片文件");
+                return "redirect:/profile";
+            }
+            User user = userService.findByUsername(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            String imageUrl = saveAvatarFile(file, user.getId());
+            user.setAvatarUrl(imageUrl);
+            userService.saveUser(user);
+            redirectAttributes.addFlashAttribute("success", "头像更新成功！");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "头像上传失败：" + e.getMessage());
+        }
+        return "redirect:/profile";
     }
 
     @GetMapping("/checkin")
@@ -209,7 +270,7 @@ public class AuthController {
         }
         byte[] imageBytes = Base64.getDecoder().decode(data);
 
-        String dirPath = "uploads/checkin/";
+        String dirPath = uploadDir + "/checkin/";
         File dir = new File(dirPath);
         if (!dir.exists()) dir.mkdirs();
 
@@ -220,6 +281,24 @@ public class AuthController {
         }
 
         return "/uploads/checkin/" + filename;
+    }
+
+    private String saveAvatarFile(MultipartFile file, Long userId) throws Exception {
+        String dirPath = uploadDir + "/avatars/";
+        File dir = new File(dirPath);
+        if (!dir.exists()) dir.mkdirs();
+
+        // 获取文件扩展名
+        String originalName = file.getOriginalFilename();
+        String ext = "jpg";
+        if (originalName != null && originalName.contains(".")) {
+            ext = originalName.substring(originalName.lastIndexOf(".") + 1);
+        }
+        String filename = userId + "_" + System.currentTimeMillis() + "." + ext;
+        File dest = new File(dirPath + filename);
+        file.transferTo(dest);
+
+        return "/uploads/avatars/" + filename;
     }
 
     // ==================== Forgot Password ====================

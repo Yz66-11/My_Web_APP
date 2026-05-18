@@ -34,9 +34,9 @@ public class Shop {
 
     private String phone;
 
-    /** PENDING=待审核, APPROVED=已通过, REJECTED=已拒绝 */
+    /** PENDING=待审核, APPROVED=已通过, REJECTED=已拒绝, WITHDRAW_PENDING=退驻待审核, CLOSED=已闭店 */
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     private ShopStatus status = ShopStatus.PENDING;
 
     private LocalDateTime createdAt;
@@ -50,7 +50,9 @@ public class Shop {
     public enum ShopStatus {
         PENDING("待审核"),
         APPROVED("已通过"),
-        REJECTED("已拒绝");
+        REJECTED("已拒绝"),
+        WITHDRAW_PENDING("待退驻"),
+        CLOSED("已闭店");
 
         private final String label;
         ShopStatus(String label) { this.label = label; }

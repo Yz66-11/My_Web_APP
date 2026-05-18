@@ -16,6 +16,9 @@ public interface ShopRepository extends JpaRepository<Shop, Long> {
 
     List<Shop> findByStatusOrderByCreatedAtDesc(Shop.ShopStatus status);
 
+    @Query("SELECT s FROM Shop s WHERE s.status = :status ORDER BY s.updatedAt DESC")
+    List<Shop> findByStatusOrderByUpdatedAtDesc(@Param("status") Shop.ShopStatus status);
+
     List<Shop> findByCategory(String category);
 
     long countByStatus(Shop.ShopStatus status);
@@ -24,9 +27,15 @@ public interface ShopRepository extends JpaRepository<Shop, Long> {
 
     List<Shop> findByStatusAndCityAndDistrict(Shop.ShopStatus status, String city, String district);
 
-    @Query("SELECT DISTINCT s.city FROM Shop s WHERE s.status = 'APPROVED' AND s.city IS NOT NULL ORDER BY s.city")
+    @Query("SELECT DISTINCT s.city FROM Shop s WHERE s.status IN ('APPROVED','CLOSED') AND s.city IS NOT NULL ORDER BY s.city")
     List<String> findDistinctCities();
 
-    @Query("SELECT DISTINCT s.district FROM Shop s WHERE s.status = 'APPROVED' AND s.city = :city AND s.district IS NOT NULL ORDER BY s.district")
+    @Query("SELECT DISTINCT s.district FROM Shop s WHERE s.status IN ('APPROVED','CLOSED') AND s.city = :city AND s.district IS NOT NULL ORDER BY s.district")
     List<String> findDistinctDistrictsByCity(@Param("city") String city);
+
+    @Query("SELECT s FROM Shop s WHERE s.status IN ('APPROVED','CLOSED') AND s.city = :city")
+    List<Shop> findByActiveStatusAndCity(@Param("city") String city);
+
+    @Query("SELECT s FROM Shop s WHERE s.status IN ('APPROVED','CLOSED') AND s.city = :city AND s.district = :district")
+    List<Shop> findByActiveStatusAndCityAndDistrict(@Param("city") String city, @Param("district") String district);
 }
