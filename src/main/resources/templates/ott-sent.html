@@ -38,31 +38,34 @@
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
                     </svg>
                 </div>
-                <h1 class="text-2xl font-bold text-stone-800 mb-2">验证码已生成</h1>
-                <p class="text-stone-500 text-sm">请复制下方验证码，在下一步中验证身份</p>
+                <h1 class="text-2xl font-bold text-stone-800 mb-2">验证码已发送</h1>
+                <p class="text-stone-500 text-sm">请查收邮箱并输入验证码</p>
             </div>
 
-            <!-- OTT Card -->
+            <!-- Email Sent Card -->
             <div class="glass-strong auth-card">
                 <div class="p-8 text-center space-y-5">
-                    <!-- Token Display -->
-                    <div th:if="${ottToken}" class="bg-warm-100 border-2 border-dashed border-primary-light rounded-2xl p-5">
-                        <p class="text-xs text-stone-400 mb-2">您的验证码</p>
-                        <p class="text-2xl font-mono font-bold text-primary tracking-widest select-all" th:text="${ottToken}">--</p>
+                    <!-- Email Info -->
+                    <div class="bg-warm-100 rounded-2xl p-5">
+                        <svg class="w-10 h-10 text-primary mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+                        </svg>
+                        <p class="text-sm text-stone-600">验证码已发送至</p>
+                        <p class="text-base font-semibold text-stone-800 mt-1" th:text="${email}">***@***.com</p>
                     </div>
 
-                    <p class="text-sm text-stone-500">
-                        验证码为一次性令牌，使用后即失效。请尽快完成验证。
-                    </p>
+                    <div class="space-y-2">
+                        <p class="text-sm text-stone-500">验证码有效期为 <strong class="text-primary">5 分钟</strong>，请尽快完成验证。</p>
+                        <p class="text-xs text-stone-400">如未收到邮件，请检查垃圾邮件文件夹</p>
+                    </div>
 
-                    <a th:if="${ottToken}"
-                       th:href="@{/verify-token(token=${ottToken})}"
+                    <a href="/verify-token"
                        class="btn-primary block w-full py-3 px-4 text-sm text-center">
-                        前往验证
+                        前往输入验证码
                     </a>
 
                     <a href="/forgot-password" class="btn-ghost block w-full py-3 px-4 text-sm text-center">
-                        重新获取验证码
+                        重新发送验证码
                     </a>
 
                     <div class="text-center pt-2">

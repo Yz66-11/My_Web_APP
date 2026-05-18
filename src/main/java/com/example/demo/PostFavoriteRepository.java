@@ -15,4 +15,6 @@ public interface PostFavoriteRepository extends JpaRepository<PostFavorite, Long
     void deleteAllByPostId(Long postId);
 
     List<PostFavorite> findByUserIdOrderByCreatedAtDesc(Long userId);
+
+    void deleteByUserId(Long userId);
 }

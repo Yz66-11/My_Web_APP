@@ -152,8 +152,9 @@
             <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                 <div th:each="dv : ${result.dishes}" class="card-premium overflow-hidden"
                      th:classappend="${!dv.unlocked} ? 'locked-card'">
-                    <div class="h-24 bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center relative">
-                        <span class="text-4xl" th:text="${#strings.isEmpty(dv.dish.imageUrl) ? '🍜' : ''}">&#127860;</span>
+                    <div class="h-24 bg-gradient-to-br from-orange-50 to-amber-100 flex items-center justify-center overflow-hidden relative">
+                        <img th:if="${dv.imageUrl}" th:src="${dv.imageUrl}" alt="菜品照片" class="w-full h-full object-cover" />
+                        <span th:unless="${dv.imageUrl}" class="text-4xl">&#127860;</span>
                         <div th:if="${!dv.unlocked}" class="absolute inset-0 flex items-center justify-center bg-black/30 rounded-t-xl">
                             <svg class="w-7 h-7 text-white/80" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                         </div>
@@ -349,8 +350,9 @@
                  th:classappend="${!dv.unlocked} ? 'locked-card' + (' animate-fade-in-up stagger-' + (${iter.index} % 6 + 1)) : (' animate-fade-in-up stagger-' + (${iter.index} % 6 + 1))">
                 <!-- Unlocked dish -->
                 <div th:if="${dv.unlocked}">
-                    <div class="h-28 bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 flex items-center justify-center">
-                        <span class="text-5xl">&#127858;</span>
+                    <div class="h-28 bg-gradient-to-br from-yellow-50 via-orange-50 to-red-50 flex items-center justify-center overflow-hidden">
+                        <img th:if="${dv.imageUrl}" th:src="${dv.imageUrl}" alt="菜品照片" class="w-full h-full object-cover" />
+                        <span th:unless="${dv.imageUrl}" class="text-5xl">&#127858;</span>
                     </div>
                     <div class="p-3 text-center">
                         <p class="text-sm font-bold text-stone-800 truncate" th:text="${dv.dish.dishName}">菜品名</p>
@@ -371,15 +373,10 @@
                     </div>
                     <div class="p-3 text-center">
                         <p class="text-sm font-medium text-stone-400 truncate" th:text="${dv.dish.dishName}">菜品名</p>
-                        <form method="post" th:action="@{/food-gallery/unlock}" class="mt-2">
-                            <input type="hidden" name="dishId" th:value="${dv.dish.id}"/>
-                            <input type="hidden" name="shopId" th:value="${dishPage.shop.id}"/>
-                            <input type="hidden" name="city" th:value="${city}"/>
-                            <input type="hidden" name="district" th:value="${district}"/>
-                            <button type="submit" class="btn-primary w-full text-xs py-1.5">
-                                解锁
-                            </button>
-                        </form>
+                        <a th:href="@{/checkin(dishId=${dv.dish.id}, shopId=${dishPage.shop.id}, city=${city}, district=${district})}"
+                           class="btn-primary w-full text-xs py-1.5 inline-block text-center">
+                            打卡解锁
+                        </a>
                     </div>
                 </div>
             </div>

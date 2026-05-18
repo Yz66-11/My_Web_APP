@@ -123,12 +123,14 @@ public class GalleryService {
         Shop shop = shopRepository.findById(shopId)
                 .orElseThrow(() -> new RuntimeException("店铺不存在"));
         List<Dish> dishes = dishRepository.findByShopIdAndStatus(shopId, Dish.DishStatus.AVAILABLE);
-        List<Long> unlockedDishIds = unlockRepository.findUnlockedDishIdsByUserId(userId);
+        Set<Long> unlockedDishIds = new HashSet<>(unlockRepository.findUnlockedDishIdsByUserId(userId));
+        Map<Long, String> unlockImageMap = buildUnlockImageMap(userId);
 
         List<DishView> dishViews = new ArrayList<>();
         for (Dish dish : dishes) {
             boolean unlocked = unlockedDishIds.contains(dish.getId());
-            dishViews.add(new DishView(dish, unlocked));
+            String imageUrl = getDisplayImage(unlocked, dish, unlockImageMap);
+            dishViews.add(new DishView(dish, unlocked, imageUrl));
         }
 
         return new DishPageView(shop, dishViews);
@@ -140,6 +142,7 @@ public class GalleryService {
         if (keyword == null || keyword.trim().isEmpty()) return Collections.emptyList();
         String kw = keyword.trim().toLowerCase();
         Set<Long> unlockedDishIds = new HashSet<>(unlockRepository.findUnlockedDishIdsByUserId(userId));
+        Map<Long, String> unlockImageMap = buildUnlockImageMap(userId);
 
         List<Shop> allShops = shopRepository.findByStatus(Shop.ShopStatus.APPROVED);
         List<SearchResultView> results = new ArrayList<>();
@@ -157,7 +160,9 @@ public class GalleryService {
                 boolean dishMatch = (dish.getDishName() != null && dish.getDishName().toLowerCase().contains(kw))
                         || (dish.getDescription() != null && dish.getDescription().toLowerCase().contains(kw));
                 if (shopMatch || dishMatch) {
-                    matchedDishes.add(new DishView(dish, unlockedDishIds.contains(dish.getId())));
+                    boolean unlocked = unlockedDishIds.contains(dish.getId());
+                    String imageUrl = getDisplayImage(unlocked, dish, unlockImageMap);
+                    matchedDishes.add(new DishView(dish, unlocked, imageUrl));
                 }
             }
 
@@ -171,7 +176,7 @@ public class GalleryService {
     // ==================== Unlock ====================
 
     @Transactional
-    public boolean unlockDish(Long userId, Long dishId) {
+    public boolean unlockDish(Long userId, Long dishId, String imageUrl) {
         if (unlockRepository.existsByUserIdAndDishId(userId, dishId)) {
             return false;
         }
@@ -179,7 +184,7 @@ public class GalleryService {
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
         Dish dish = dishRepository.findById(dishId)
                 .orElseThrow(() -> new RuntimeException("菜品不存在"));
-        unlockRepository.save(new GalleryUnlock(user, dish));
+        unlockRepository.save(new GalleryUnlock(user, dish, imageUrl));
         return true;
     }
 
@@ -189,6 +194,34 @@ public class GalleryService {
         long totalDishes = dishRepository.count();
         long unlockedDishes = unlockRepository.countByUserId(userId);
         return new GlobalStats(totalDishes, unlockedDishes);
+    }
+
+    // ==================== 辅助方法 ====================
+
+    /**
+     * 构建 dishId -> 打卡照片URL 的映射表
+     */
+    private Map<Long, String> buildUnlockImageMap(Long userId) {
+        Map<Long, String> map = new HashMap<>();
+        if (userId == null) return map;
+        List<GalleryUnlock> unlocks = unlockRepository.findByUserId(userId);
+        for (GalleryUnlock unlock : unlocks) {
+            if (unlock.getImageUrl() != null) {
+                map.put(unlock.getDish().getId(), unlock.getImageUrl());
+            }
+        }
+        return map;
+    }
+
+    /**
+     * 获取菜品显示图片：已解锁优先展示打卡照片，否则展示菜品默认图，都没有则返回 null
+     */
+    private String getDisplayImage(boolean unlocked, Dish dish, Map<Long, String> unlockImageMap) {
+        if (unlocked) {
+            String checkinImage = unlockImageMap.get(dish.getId());
+            if (checkinImage != null) return checkinImage;
+        }
+        return dish.getImageUrl();
     }
 
     // ==================== Inner View Classes ====================
@@ -264,14 +297,22 @@ public class GalleryService {
     public static class DishView {
         private final Dish dish;
         private final boolean unlocked;
+        private final String imageUrl;
 
         public DishView(Dish dish, boolean unlocked) {
+            this(dish, unlocked, null);
+        }
+
+        public DishView(Dish dish, boolean unlocked, String imageUrl) {
             this.dish = dish;
             this.unlocked = unlocked;
+            this.imageUrl = imageUrl;
         }
 
         public Dish getDish() { return dish; }
         public boolean isUnlocked() { return unlocked; }
+        /** 打卡照片 URL（已解锁时优先展示），若为空则使用 dish.getImageUrl() 或默认图标 */
+        public String getImageUrl() { return imageUrl; }
     }
 
     public static class SearchResultView {

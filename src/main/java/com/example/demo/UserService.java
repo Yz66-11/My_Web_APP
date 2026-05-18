@@ -2,6 +2,7 @@ package com.example.demo;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
@@ -10,10 +11,30 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final ShopRepository shopRepository;
+    private final DishRepository dishRepository;
+    private final PostRepository postRepository;
+    private final PostLikeRepository postLikeRepository;
+    private final PostFavoriteRepository postFavoriteRepository;
+    private final CommentRepository commentRepository;
+    private final GalleryUnlockRepository galleryUnlockRepository;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                       ShopRepository shopRepository, DishRepository dishRepository,
+                       PostRepository postRepository,
+                       PostLikeRepository postLikeRepository,
+                       PostFavoriteRepository postFavoriteRepository,
+                       CommentRepository commentRepository,
+                       GalleryUnlockRepository galleryUnlockRepository) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.shopRepository = shopRepository;
+        this.dishRepository = dishRepository;
+        this.postRepository = postRepository;
+        this.postLikeRepository = postLikeRepository;
+        this.postFavoriteRepository = postFavoriteRepository;
+        this.commentRepository = commentRepository;
+        this.galleryUnlockRepository = galleryUnlockRepository;
     }
 
     public List<User> getAllUsers() {
@@ -52,6 +73,10 @@ public class UserService {
         return userRepository.save(user);
     }
 
+    public Optional<User> findByEmail(String email) {
+        return userRepository.findByEmail(email);
+    }
+
     public void changePassword(String username, String oldPassword, String newPassword) {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
@@ -87,7 +112,37 @@ public class UserService {
         userRepository.save(user);
     }
 
+    @Transactional
     public void deleteUser(Long userId) {
+        // 1. 删除图鉴解锁记录
+        galleryUnlockRepository.deleteByUserId(userId);
+
+        // 2. 删除该用户的评论
+        commentRepository.deleteByAuthorId(userId);
+
+        // 3. 删除该用户的点赞
+        postLikeRepository.deleteByUserId(userId);
+
+        // 4. 删除该用户的收藏
+        postFavoriteRepository.deleteByUserId(userId);
+
+        // 5. 删除该用户的帖子（先清理帖子关联的评论、点赞、收藏）
+        List<Post> userPosts = postRepository.findByAuthorIdOrderByCreatedAtDesc(userId);
+        for (Post post : userPosts) {
+            postLikeRepository.deleteAllByPostId(post.getId());
+            postFavoriteRepository.deleteAllByPostId(post.getId());
+            commentRepository.deleteAllByPostId(post.getId());
+            postRepository.delete(post);
+        }
+
+        // 6. 删除该用户的店铺（先删菜品，再删店铺）
+        List<Shop> userShops = shopRepository.findByOwnerId(userId);
+        for (Shop shop : userShops) {
+            dishRepository.deleteAll(dishRepository.findByShopId(shop.getId()));
+            shopRepository.delete(shop);
+        }
+
+        // 7. 最后删除用户
         userRepository.deleteById(userId);
     }
 

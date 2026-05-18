@@ -4,6 +4,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.security.Principal;
 import java.util.List;
@@ -25,13 +26,16 @@ public class AdminController {
     // ==================== Dashboard ====================
 
     @GetMapping({"", "/dashboard"})
-    public String dashboard(Model model) {
+    public String dashboard(@ModelAttribute("success") String success, Model model) {
         model.addAttribute("totalUsers", userService.countUsers());
         model.addAttribute("approvedShopCount", shopService.countApproved());
         model.addAttribute("pendingShopCount", shopService.countPending());
         model.addAttribute("pendingShops", shopService.getPendingShops());
         model.addAttribute("users", userService.getAllUsers());
         model.addAttribute("pendingCount", postService.countPendingPosts());
+        if (success != null && !success.isBlank()) {
+            model.addAttribute("success", success);
+        }
         return "admin/dashboard";
     }
 
@@ -65,17 +69,23 @@ public class AdminController {
     // ==================== User Management ====================
 
     @PostMapping("/users/{id}/toggle-role")
-    public String toggleUserRole(@PathVariable Long id) {
+    public String toggleUserRole(@PathVariable Long id, RedirectAttributes redirectAttributes) {
         User user = userService.findById(id).orElse(null);
         if (user != null) {
             userService.changeRole(id, user.getRole() == User.Role.USER ? User.Role.ADMIN : User.Role.USER);
+            redirectAttributes.addFlashAttribute("success", "用户角色已切换");
         }
         return "redirect:/admin";
     }
 
     @PostMapping("/users/{id}/delete")
-    public String deleteUser(@PathVariable Long id) {
-        userService.deleteUser(id);
+    public String deleteUser(@PathVariable Long id, RedirectAttributes redirectAttributes) {
+        try {
+            userService.deleteUser(id);
+            redirectAttributes.addFlashAttribute("success", "用户已成功删除");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("error", "删除用户失败：" + e.getMessage());
+        }
         return "redirect:/admin";
     }
 

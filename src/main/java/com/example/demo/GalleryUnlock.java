@@ -24,13 +24,16 @@ public class GalleryUnlock {
     @Column(nullable = false)
     private LocalDateTime unlockedAt;
 
+    private String imageUrl;
+
     public GalleryUnlock() {
         this.unlockedAt = LocalDateTime.now();
     }
 
-    public GalleryUnlock(User user, Dish dish) {
+    public GalleryUnlock(User user, Dish dish, String imageUrl) {
         this.user = user;
         this.dish = dish;
+        this.imageUrl = imageUrl;
         this.unlockedAt = LocalDateTime.now();
     }
 
@@ -45,4 +48,7 @@ public class GalleryUnlock {
 
     public LocalDateTime getUnlockedAt() { return unlockedAt; }
     public void setUnlockedAt(LocalDateTime unlockedAt) { this.unlockedAt = unlockedAt; }
+
+    public String getImageUrl() { return imageUrl; }
+    public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
 }

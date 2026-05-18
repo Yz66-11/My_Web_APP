@@ -9,17 +9,31 @@ import jakarta.validation.Valid;
 import org.springframework.validation.BindingResult;
 import java.security.Principal;
 import java.util.Optional;
-import java.util.UUID;
+import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.util.Base64;
 
 @Controller
 public class AuthController {
 
     private final UserService userService;
     private final PasswordEncoder passwordEncoder;
+    private final EmailService emailService;
+    private final GalleryService galleryService;
+    private final ShopService shopService;
+    private final DishRepository dishRepository;
 
-    public AuthController(UserService userService, PasswordEncoder passwordEncoder) {
+    public AuthController(UserService userService, PasswordEncoder passwordEncoder,
+                          EmailService emailService, GalleryService galleryService,
+                          ShopService shopService, DishRepository dishRepository) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+        this.galleryService = galleryService;
+        this.shopService = shopService;
+        this.dishRepository = dishRepository;
     }
 
     @GetMapping("/")
@@ -141,15 +155,76 @@ public class AuthController {
     }
 
     @GetMapping("/checkin")
-    public String showCheckin(Model model) { return "checkin"; }
+    public String showCheckin(@RequestParam(value = "dishId", required = false) Long dishId,
+                              @RequestParam(value = "shopId", required = false) Long shopId,
+                              @RequestParam(value = "city", required = false) String city,
+                              @RequestParam(value = "district", required = false) String district,
+                              Model model, Principal principal) {
+        if (dishId != null) {
+            dishRepository.findById(dishId).ifPresent(dish -> {
+                model.addAttribute("dish", dish);
+                model.addAttribute("dishId", dishId);
+            });
+        }
+        if (shopId != null) {
+            shopService.findById(shopId).ifPresent(shop -> {
+                model.addAttribute("shop", shop);
+                model.addAttribute("shopId", shopId);
+            });
+        }
+        model.addAttribute("city", city);
+        model.addAttribute("district", district);
+        return "checkin";
+    }
 
     @PostMapping("/checkin")
     @ResponseBody
     public String processCheckin(@RequestBody CheckinRequest checkinRequest, Principal principal) {
-        return "{\"success\": true, \"message\": \"打卡成功！\"}";
+        try {
+            Long userId = userService.findByUsername(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("用户未登录")).getId();
+            Long dishId = checkinRequest.getDishId();
+            if (dishId == null) {
+                return "{\"success\": false, \"message\": \"缺少菜品ID\"}";
+            }
+            // 保存照片
+            String imageUrl = null;
+            String rawImage = checkinRequest.getImage();
+            if (rawImage != null && !rawImage.isBlank()) {
+                imageUrl = saveCheckinImage(rawImage, userId);
+            }
+            boolean newlyUnlocked = galleryService.unlockDish(userId, dishId, imageUrl);
+            String message = newlyUnlocked ? "打卡成功！图鉴已更新" : "该菜品已经解锁过了";
+            return "{\"success\": true, \"message\": \"" + message + "\"}";
+        } catch (Exception e) {
+            return "{\"success\": false, \"message\": \"" + e.getMessage() + "\"}";
+        }
+    }
+
+    private String saveCheckinImage(String base64Data, Long userId) throws Exception {
+        // 移除 data:image/jpeg;base64, 等前缀
+        String data = base64Data;
+        if (data.contains(",")) {
+            data = data.substring(data.indexOf(",") + 1);
+        }
+        byte[] imageBytes = Base64.getDecoder().decode(data);
+
+        String dirPath = "uploads/checkin/";
+        File dir = new File(dirPath);
+        if (!dir.exists()) dir.mkdirs();
+
+        String filename = userId + "_" + System.currentTimeMillis() + ".jpg";
+        File file = new File(dirPath + filename);
+        try (FileOutputStream fos = new FileOutputStream(file)) {
+            fos.write(imageBytes);
+        }
+
+        return "/uploads/checkin/" + filename;
     }
 
     // ==================== Forgot Password ====================
+
+    private static final int CODE_EXPIRY_MINUTES = 5;
 
     @GetMapping("/forgot-password")
     public String showForgotPassword() {
@@ -157,43 +232,65 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public String processForgotPassword(@RequestParam("username") String username,
+    public String processForgotPassword(@RequestParam("email") String email,
                                        HttpSession session, Model model) {
-        if (!userService.existsByUsername(username)) {
-            model.addAttribute("error", "用户名不存在！");
+        Optional<User> userOpt = userService.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            model.addAttribute("error", "该邮箱未注册！");
             return "forgot-password";
         }
-        String token = UUID.randomUUID().toString().replace("-", "").substring(0, 8).toUpperCase();
-        session.setAttribute("resetToken", token);
-        session.setAttribute("resetUsername", username);
-        model.addAttribute("ottToken", token);
-        return "ott-sent";
-    }
+        // 生成 6 位数字验证码
+        String code = String.format("%06d", ThreadLocalRandom.current().nextInt(1000000));
+        session.setAttribute("resetCode", code);
+        session.setAttribute("resetUsername", userOpt.get().getUsername());
+        session.setAttribute("resetCodeTime", System.currentTimeMillis());
 
-    @GetMapping("/ott/sent")
-    public String ottSent(HttpSession session, Model model) {
-        String token = (String) session.getAttribute("resetToken");
-        if (token != null) {
-            model.addAttribute("ottToken", token);
+        // 发送邮件
+        try {
+            emailService.sendPasswordResetCode(email, code);
+        } catch (Exception e) {
+            model.addAttribute("error", "邮件发送失败，请稍后重试");
+            return "forgot-password";
         }
+
+        // 不暴露验证码，只提示已发送
+        model.addAttribute("email", email);
         return "ott-sent";
     }
 
     @GetMapping("/verify-token")
-    public String showVerifyToken(@RequestParam(value = "token", required = false) String token, Model model) {
-        model.addAttribute("token", token);
+    public String showVerifyToken(Model model) {
         return "verify-token";
     }
 
     @PostMapping("/verify-token")
-    public String processVerifyToken(@RequestParam("token") String token,
+    public String processVerifyToken(@RequestParam("code") String code,
                                      HttpSession session, Model model) {
-        String sessionToken = (String) session.getAttribute("resetToken");
-        if (sessionToken == null || !sessionToken.equals(token.trim().toUpperCase())) {
-            model.addAttribute("error", "验证码无效或已过期，请重新获取");
+        String sessionCode = (String) session.getAttribute("resetCode");
+        Long codeTime = (Long) session.getAttribute("resetCodeTime");
+
+        // 检查是否存在
+        if (sessionCode == null || codeTime == null) {
+            model.addAttribute("error", "请先获取验证码");
             return "verify-token";
         }
-        session.removeAttribute("resetToken");
+        // 检查是否过期（5分钟）
+        if (System.currentTimeMillis() - codeTime > CODE_EXPIRY_MINUTES * 60 * 1000) {
+            session.removeAttribute("resetCode");
+            session.removeAttribute("resetUsername");
+            session.removeAttribute("resetCodeTime");
+            model.addAttribute("error", "验证码已过期，请重新获取");
+            return "verify-token";
+        }
+        // 检查是否匹配
+        if (!sessionCode.equals(code.trim())) {
+            model.addAttribute("error", "验证码错误，请重新输入");
+            return "verify-token";
+        }
+
+        // 验证通过
+        session.removeAttribute("resetCode");
+        session.removeAttribute("resetCodeTime");
         session.setAttribute("tokenVerified", true);
         return "redirect:/reset-password";
     }
@@ -234,30 +331,25 @@ public class AuthController {
 }
 
 class CheckinRequest {
-    private String foodType;
+    private Long dishId;
+    private Long shopId;
+    private String city;
+    private String district;
     private String comment;
     private String image;
-    private Location location;
-    private String timestamp;
 
-    public String getFoodType() { return foodType; }
-    public void setFoodType(String foodType) { this.foodType = foodType; }
+    public Long getDishId() { return dishId; }
+    public void setDishId(Long dishId) { this.dishId = dishId; }
+    public Long getShopId() { return shopId; }
+    public void setShopId(Long shopId) { this.shopId = shopId; }
+    public String getCity() { return city; }
+    public void setCity(String city) { this.city = city; }
+    public String getDistrict() { return district; }
+    public void setDistrict(String district) { this.district = district; }
     public String getComment() { return comment; }
     public void setComment(String comment) { this.comment = comment; }
     public String getImage() { return image; }
     public void setImage(String image) { this.image = image; }
-    public Location getLocation() { return location; }
-    public void setLocation(Location location) { this.location = location; }
-    public String getTimestamp() { return timestamp; }
-    public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
 }
 
-class Location {
-    private double latitude;
-    private double longitude;
 
-    public double getLatitude() { return latitude; }
-    public void setLatitude(double latitude) { this.latitude = latitude; }
-    public double getLongitude() { return longitude; }
-    public void setLongitude(double longitude) { this.longitude = longitude; }
-}

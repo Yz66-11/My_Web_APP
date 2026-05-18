@@ -24,4 +24,6 @@ public interface GalleryUnlockRepository extends JpaRepository<GalleryUnlock, Lo
 
     @Query("SELECT DISTINCT gu.dish.shop.id FROM GalleryUnlock gu WHERE gu.user.id = :userId")
     List<Long> findUnlockedShopIdsByUserId(@Param("userId") Long userId);
+
+    void deleteByUserId(Long userId);
 }

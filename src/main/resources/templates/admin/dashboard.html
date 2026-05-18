@@ -40,6 +40,16 @@
 
 <div class="max-w-6xl mx-auto px-4 py-6">
 
+    <!-- Flash Messages -->
+    <div th:if="${success != null}" class="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2 animate-fade-in">
+        <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+        <span th:text="${success}">操作成功</span>
+    </div>
+    <div th:if="${error != null}" class="mb-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2 animate-fade-in">
+        <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span th:text="${error}">操作失败</span>
+    </div>
+
     <!-- 统计卡片 -->
     <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <a th:href="@{/admin/posts(status='pending')}" class="stat-card bg-white rounded-xl shadow-sm border border-border p-5 no-underline">
