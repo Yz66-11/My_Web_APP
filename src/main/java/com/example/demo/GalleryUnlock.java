@@ -26,14 +26,18 @@ public class GalleryUnlock {
 
     private String imageUrl;
 
+    @Column(columnDefinition = "TEXT")
+    private String comment;
+
     public GalleryUnlock() {
         this.unlockedAt = LocalDateTime.now();
     }
 
-    public GalleryUnlock(User user, Dish dish, String imageUrl) {
+    public GalleryUnlock(User user, Dish dish, String imageUrl, String comment) {
         this.user = user;
         this.dish = dish;
         this.imageUrl = imageUrl;
+        this.comment = comment;
         this.unlockedAt = LocalDateTime.now();
     }
 
@@ -51,4 +55,6 @@ public class GalleryUnlock {
 
     public String getImageUrl() { return imageUrl; }
     public void setImageUrl(String imageUrl) { this.imageUrl = imageUrl; }
+    public String getComment() { return comment; }
+    public void setComment(String comment) { this.comment = comment; }
 }

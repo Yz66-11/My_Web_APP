@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,10 +16,16 @@ public class MerchantController {
 
     private final ShopService shopService;
     private final UserService userService;
+    private final ShopVisitRepository shopVisitRepository;
+    private final GalleryUnlockRepository galleryUnlockRepository;
 
-    public MerchantController(ShopService shopService, UserService userService) {
+    public MerchantController(ShopService shopService, UserService userService,
+                              ShopVisitRepository shopVisitRepository,
+                              GalleryUnlockRepository galleryUnlockRepository) {
         this.shopService = shopService;
         this.userService = userService;
+        this.shopVisitRepository = shopVisitRepository;
+        this.galleryUnlockRepository = galleryUnlockRepository;
     }
 
     @GetMapping("/merchants")
@@ -32,7 +40,7 @@ public class MerchantController {
     }
 
     @GetMapping("/merchant/{id}")
-    public String showMerchantDetail(@PathVariable Long id, Model model) {
+    public String showMerchantDetail(@PathVariable Long id, Model model, Principal principal) {
         Optional<Shop> shopOpt = shopService.findById(id);
         if (shopOpt.isEmpty()) {
             return "redirect:/merchants";
@@ -40,7 +48,43 @@ public class MerchantController {
         Shop shop = shopOpt.get();
         model.addAttribute("shop", shop);
         model.addAttribute("dishes", shopService.getDishesByShopId(id));
+
+        // 查询店铺打卡信息
+        model.addAttribute("totalVisits", shopVisitRepository.countByShopId(id));
+        if (principal != null) {
+            userService.findByUsername(principal.getName()).ifPresent(user -> {
+                shopVisitRepository.findByUserIdAndShopId(user.getId(), id)
+                    .ifPresent(visit -> {
+                        long days = ChronoUnit.DAYS.between(visit.getVisitedAt(), LocalDateTime.now());
+                        model.addAttribute("daysSinceFirstVisit", days);
+                    });
+                // 查询用户已解锁的菜品 ID，用于显示"已打卡"状态
+                model.addAttribute("unlockedDishIds", galleryUnlockRepository.findUnlockedDishIdsByUserId(user.getId()));
+            });
+        } else {
+            model.addAttribute("unlockedDishIds", java.util.Collections.emptyList());
+        }
         return "merchant-detail";
+    }
+
+    @PostMapping("/merchant/{id}/checkin")
+    @ResponseBody
+    public String shopCheckin(@PathVariable Long id, Principal principal) {
+        if (principal == null) {
+            return "{\"success\": false, \"message\": \"请先登录\"}";
+        }
+        try {
+            User user = userService.findByUsername(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+            Optional<ShopVisit> existing = shopVisitRepository.findByUserIdAndShopId(user.getId(), id);
+            if (existing.isPresent()) {
+                return "{\"success\": true, \"message\": \"已打卡过该店铺\"}";
+            }
+            shopVisitRepository.save(new ShopVisit(user.getId(), id));
+            return "{\"success\": true, \"message\": \"打卡成功！\"}";
+        } catch (Exception e) {
+            return "{\"success\": false, \"message\": \"" + e.getMessage() + "\"}";
+        }
     }
 
     @GetMapping("/shop/apply")

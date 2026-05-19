@@ -92,7 +92,7 @@ public class GalleryController {
             return "redirect:/login";
         }
         try {
-            boolean newlyUnlocked = galleryService.unlockDish(userId, dishId, null);
+            boolean newlyUnlocked = galleryService.unlockDish(userId, dishId, null, null);
             if (newlyUnlocked) {
                 redirectAttributes.addFlashAttribute("success", "解锁成功！新菜品已加入你的美食图鉴");
             } else {

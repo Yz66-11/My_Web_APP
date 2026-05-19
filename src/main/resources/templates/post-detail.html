@@ -36,6 +36,12 @@
                 <span>美食打卡</span>
             </a>
             <a href="/posts" class="text-sm text-stone-400 hover:text-primary transition-colors">&larr; 返回社区</a>
+            <a href="/profile" class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center overflow-hidden ring-2 ring-white shadow-sm shrink-0 hover:ring-primary-light transition-all ml-auto" title="我的">
+                <img th:if="${avatarUrl != null and !avatarUrl.isEmpty()}" th:src="${avatarUrl}" alt="头像" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+                <span th:unless="${avatarUrl != null and !avatarUrl.isEmpty()}" class="text-white text-xs font-bold">
+                    <span th:text="${username != null and !username.isEmpty() ? #strings.substring(username, 0, 1) : 'U'}">U</span>
+                </span>
+            </a>
         </div>
     </div>
 </nav>
@@ -47,8 +53,11 @@
         <!-- Author -->
         <div class="flex items-center justify-between px-5 pt-5 pb-3">
             <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-orange-400 to-red-400 rounded-full flex items-center justify-center text-white font-bold ring-2 ring-orange-100 shadow-sm"
-                     th:text="${post.author == null ? 'U' : (#strings.isEmpty(post.author.name) ? (#strings.isEmpty(post.author.username) ? 'U' : #strings.substring(post.author.username, 0, 1)) : #strings.substring(post.author.name, 0, 1))}">U</div>
+                <div class="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-400 flex items-center justify-center overflow-hidden ring-2 ring-orange-100 shadow-sm shrink-0">
+                    <img th:if="${post.author != null and post.author.avatarUrl != null and !post.author.avatarUrl.isEmpty()}" th:src="${post.author.avatarUrl}" alt="" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+                    <span th:if="${post.author == null or post.author.avatarUrl == null or post.author.avatarUrl.isEmpty()}" class="text-white font-bold text-sm"
+                          th:text="${post.author == null ? 'U' : (#strings.isEmpty(post.author.name) ? (#strings.isEmpty(post.author.username) ? 'U' : #strings.substring(post.author.username, 0, 1)) : #strings.substring(post.author.name, 0, 1))}">U</span>
+                </div>
                 <div>
                     <span class="text-sm font-semibold text-stone-900" th:text="${post.author == null ? '未知用户' : (#strings.isEmpty(post.author.name) ? post.author.username : post.author.name)}">用户</span>
                     <div th:if="${post.createdAt != null}" class="text-xs text-stone-400" th:text="${#temporals.format(post.createdAt, 'yyyy-MM-dd HH:mm')}">时间</div>
@@ -74,8 +83,8 @@
         <!-- Images -->
         <div th:if="${post.imageUrls != null and !post.imageUrls.isBlank()}" class="px-5 pb-4">
             <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-                <div th:each="img : ${post.imageUrls.split(',')}" class="aspect-square bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl flex items-center justify-center">
-                    <svg class="w-8 h-8 text-orange-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"/></svg>
+                <div th:each="img : ${post.imageUrls.split(',')}" class="aspect-square bg-gradient-to-br from-orange-50 to-orange-100 rounded-xl overflow-hidden">
+                    <img th:src="${img}" alt="帖子图片" class="w-full h-full object-cover" loading="lazy" referrerpolicy="no-referrer" />
                 </div>
             </div>
         </div>
@@ -146,8 +155,11 @@
         </div>
         <div th:each="c, iter : ${comments}" class="flex gap-3 px-5 py-4 border-b border-stone-50 last:border-b-0 animate-fade-in-up"
              th:style="${'animation-delay:' + (iter.index * 0.05) + 's'}">
-            <div class="w-8 h-8 bg-gradient-to-br from-blue-400 to-indigo-400 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ring-2 ring-indigo-100"
-                 th:text="${c.author == null ? 'U' : (#strings.isEmpty(c.author.name) ? (#strings.isEmpty(c.author.username) ? 'U' : #strings.substring(c.author.username, 0, 1)) : #strings.substring(c.author.name, 0, 1))}">U</div>
+            <div class="w-8 h-8 rounded-full bg-gradient-to-br from-blue-400 to-indigo-400 flex items-center justify-center overflow-hidden shrink-0 ring-2 ring-indigo-100">
+                <img th:if="${c.author != null and c.author.avatarUrl != null and !c.author.avatarUrl.isEmpty()}" th:src="${c.author.avatarUrl}" alt="" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+                <span th:if="${c.author == null or c.author.avatarUrl == null or c.author.avatarUrl.isEmpty()}" class="text-white text-xs font-bold"
+                      th:text="${c.author == null ? 'U' : (#strings.isEmpty(c.author.name) ? (#strings.isEmpty(c.author.username) ? 'U' : #strings.substring(c.author.username, 0, 1)) : #strings.substring(c.author.name, 0, 1))}">U</span>
+            </div>
             <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 mb-1">
                     <span class="text-sm font-semibold text-stone-800" th:text="${c.author == null ? '未知用户' : (#strings.isEmpty(c.author.name) ? c.author.username : c.author.name)}">用户</span>

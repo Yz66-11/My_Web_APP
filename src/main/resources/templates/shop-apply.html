@@ -30,9 +30,11 @@
                 <svg class="w-7 h-7 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"/></svg>
                 <span class="text-primary">美食打卡</span>
             </a>
-            <a href="/profile" class="text-sm text-stone-400 hover:text-primary transition-colors flex items-center gap-1">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
-                返回
+            <a href="/profile" class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center overflow-hidden ring-2 ring-white shadow-sm shrink-0 hover:ring-primary-light transition-all ml-auto" title="我的">
+                <img th:if="${avatarUrl != null and !avatarUrl.isEmpty()}" th:src="${avatarUrl}" alt="头像" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+                <span th:unless="${avatarUrl != null and !avatarUrl.isEmpty()}" class="text-white text-xs font-bold">
+                    <span th:text="${username != null and !username.isEmpty() ? #strings.substring(username, 0, 1) : 'U'}">U</span>
+                </span>
             </a>
         </div>
     </div>

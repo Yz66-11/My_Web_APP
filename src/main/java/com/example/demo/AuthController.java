@@ -254,7 +254,7 @@ public class AuthController {
             if (rawImage != null && !rawImage.isBlank()) {
                 imageUrl = saveCheckinImage(rawImage, userId);
             }
-            boolean newlyUnlocked = galleryService.unlockDish(userId, dishId, imageUrl);
+            boolean newlyUnlocked = galleryService.unlockDish(userId, dishId, imageUrl, checkinRequest.getComment());
             String message = newlyUnlocked ? "打卡成功！图鉴已更新" : "该菜品已经解锁过了";
             return "{\"success\": true, \"message\": \"" + message + "\"}";
         } catch (Exception e) {

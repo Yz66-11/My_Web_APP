@@ -286,6 +286,11 @@ public class PostService {
             return (name != null && !name.isEmpty()) ? name : post.getAuthor().getUsername();
         }
 
+        public String getAuthorAvatarUrl() {
+            if (post.getAuthor() == null) return null;
+            return post.getAuthor().getAvatarUrl();
+        }
+
         public String getPreviewContent() {
             String c = post.getContent();
             return c != null && c.length() > 120 ? c.substring(0, 120) + "..." : c;

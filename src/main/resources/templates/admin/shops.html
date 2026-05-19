@@ -25,6 +25,12 @@
                 <a class="text-sm text-gray-500 hover:text-primary transition-colors" href="/">返回前台</a>
             </div>
             <div class="flex items-center gap-4 text-sm">
+                <a href="/profile" class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center overflow-hidden ring-2 ring-white shadow-sm shrink-0 hover:ring-primary-light transition-all" title="我的">
+                    <img th:if="${avatarUrl != null and !avatarUrl.isEmpty()}" th:src="${avatarUrl}" alt="头像" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+                    <span th:unless="${avatarUrl != null and !avatarUrl.isEmpty()}" class="text-white text-xs font-bold">
+                        <span th:text="${username != null and !username.isEmpty() ? #strings.substring(username, 0, 1) : 'U'}">U</span>
+                    </span>
+                </a>
                 <span class="text-gray-500">管理员：<strong class="text-gray-700" th:text="${#authentication.name}"></strong></span>
                 <form action="/logout" method="post">
                     <button type="submit" class="text-red-500 hover:text-red-700 transition-colors font-medium">退出</button>

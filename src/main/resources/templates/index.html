@@ -39,14 +39,15 @@
         </a>
         <div class="flex items-center gap-3">
             <div th:if="${#authentication.principal != 'anonymousUser'}" class="flex items-center gap-3">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                        <svg class="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
-                        </svg>
+                <a href="/profile" class="flex items-center gap-2 group">
+                    <div class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center overflow-hidden ring-2 ring-white shadow-sm shrink-0">
+                        <img th:if="${avatarUrl != null and !avatarUrl.isEmpty()}" th:src="${avatarUrl}" alt="头像" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+                        <span th:unless="${avatarUrl != null and !avatarUrl.isEmpty()}" class="text-white text-xs font-bold">
+                            <span th:text="${username != null and !username.isEmpty() ? #strings.substring(username, 0, 1) : 'U'}">U</span>
+                        </span>
                     </div>
-                    <span class="font-semibold text-[#1C1917] text-sm" th:text="${#authentication.name}"></span>
-                </div>
+                    <span class="font-semibold text-[#1C1917] text-sm group-hover:text-primary transition-colors" th:text="${#authentication.name}"></span>
+                </a>
                 <span th:if="${isAdmin}" class="badge badge-danger text-xs">管理员</span>
             </div>
             <div th:unless="${#authentication.principal != 'anonymousUser'}" class="flex items-center gap-2.5">

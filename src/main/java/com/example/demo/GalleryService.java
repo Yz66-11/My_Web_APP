@@ -129,13 +129,15 @@ public class GalleryService {
         List<Dish> dishes = dishRepository.findByShopId(shopId);
         Set<Long> unlockedDishIds = new HashSet<>(unlockRepository.findUnlockedDishIdsByUserId(userId));
         Map<Long, String> unlockImageMap = buildUnlockImageMap(userId);
+        Map<Long, String> unlockCommentMap = buildUnlockCommentMap(userId);
 
         List<DishView> dishViews = new ArrayList<>();
         for (Dish dish : dishes) {
             boolean unlocked = unlockedDishIds.contains(dish.getId());
             String imageUrl = getDisplayImage(unlocked, dish, unlockImageMap);
             boolean unavailable = dish.getStatus() == Dish.DishStatus.UNAVAILABLE;
-            dishViews.add(new DishView(dish, unlocked, unavailable, imageUrl));
+            String comment = unlocked ? unlockCommentMap.get(dish.getId()) : null;
+            dishViews.add(new DishView(dish, unlocked, unavailable, imageUrl, comment));
         }
 
         return new DishPageView(shop, dishViews);
@@ -148,6 +150,7 @@ public class GalleryService {
         String kw = keyword.trim().toLowerCase();
         Set<Long> unlockedDishIds = new HashSet<>(unlockRepository.findUnlockedDishIdsByUserId(userId));
         Map<Long, String> unlockImageMap = buildUnlockImageMap(userId);
+        Map<Long, String> unlockCommentMap = buildUnlockCommentMap(userId);
 
         List<Shop> allShops = new ArrayList<>(shopRepository.findByStatus(Shop.ShopStatus.APPROVED));
         allShops.addAll(shopRepository.findByStatus(Shop.ShopStatus.CLOSED));
@@ -169,7 +172,8 @@ public class GalleryService {
                     boolean unlocked = unlockedDishIds.contains(dish.getId());
                     String imageUrl = getDisplayImage(unlocked, dish, unlockImageMap);
                     boolean unavailable = dish.getStatus() == Dish.DishStatus.UNAVAILABLE;
-                    matchedDishes.add(new DishView(dish, unlocked, unavailable, imageUrl));
+                    String comment = unlocked ? unlockCommentMap.get(dish.getId()) : null;
+                    matchedDishes.add(new DishView(dish, unlocked, unavailable, imageUrl, comment));
                 }
             }
 
@@ -183,7 +187,7 @@ public class GalleryService {
     // ==================== Unlock ====================
 
     @Transactional
-    public boolean unlockDish(Long userId, Long dishId, String imageUrl) {
+    public boolean unlockDish(Long userId, Long dishId, String imageUrl, String comment) {
         if (unlockRepository.existsByUserIdAndDishId(userId, dishId)) {
             return false;
         }
@@ -191,7 +195,7 @@ public class GalleryService {
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
         Dish dish = dishRepository.findById(dishId)
                 .orElseThrow(() -> new RuntimeException("菜品不存在"));
-        unlockRepository.save(new GalleryUnlock(user, dish, imageUrl));
+        unlockRepository.save(new GalleryUnlock(user, dish, imageUrl, comment));
         return true;
     }
 
@@ -215,6 +219,21 @@ public class GalleryService {
         for (GalleryUnlock unlock : unlocks) {
             if (unlock.getImageUrl() != null) {
                 map.put(unlock.getDish().getId(), unlock.getImageUrl());
+            }
+        }
+        return map;
+    }
+
+    /**
+     * 构建 dishId -> 打卡备注 的映射表
+     */
+    private Map<Long, String> buildUnlockCommentMap(Long userId) {
+        Map<Long, String> map = new HashMap<>();
+        if (userId == null) return map;
+        List<GalleryUnlock> unlocks = unlockRepository.findByUserId(userId);
+        for (GalleryUnlock unlock : unlocks) {
+            if (unlock.getComment() != null && !unlock.getComment().isBlank()) {
+                map.put(unlock.getDish().getId(), unlock.getComment());
             }
         }
         return map;
@@ -313,20 +332,26 @@ public class GalleryService {
         private final boolean unlocked;
         private final boolean unavailable;
         private final String imageUrl;
+        private final String comment;
 
         public DishView(Dish dish, boolean unlocked) {
-            this(dish, unlocked, false, null);
+            this(dish, unlocked, false, null, null);
         }
 
         public DishView(Dish dish, boolean unlocked, String imageUrl) {
-            this(dish, unlocked, false, imageUrl);
+            this(dish, unlocked, false, imageUrl, null);
         }
 
         public DishView(Dish dish, boolean unlocked, boolean unavailable, String imageUrl) {
+            this(dish, unlocked, unavailable, imageUrl, null);
+        }
+
+        public DishView(Dish dish, boolean unlocked, boolean unavailable, String imageUrl, String comment) {
             this.dish = dish;
             this.unlocked = unlocked;
             this.unavailable = unavailable;
             this.imageUrl = imageUrl;
+            this.comment = comment;
         }
 
         public Dish getDish() { return dish; }
@@ -334,6 +359,7 @@ public class GalleryService {
         public boolean isUnavailable() { return unavailable; }
         /** 打卡照片 URL（已解锁时优先展示），若为空则使用 dish.getImageUrl() 或默认图标 */
         public String getImageUrl() { return imageUrl; }
+        public String getComment() { return comment; }
     }
 
     public static class SearchResultView {

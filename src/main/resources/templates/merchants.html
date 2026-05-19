@@ -36,7 +36,12 @@
                 <a href="/merchants" class="px-3 py-2 rounded-lg text-sm font-bold text-primary bg-orange-50 transition-all">商家</a>
                 <a href="/food-gallery" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">图鉴</a>
                 <a href="/posts" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">社区</a>
-                <a href="/profile" class="px-3 py-2 rounded-lg text-sm font-medium text-gray-500 hover:text-primary hover:bg-orange-50 transition-all">我的</a>
+                <a href="/profile" class="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center overflow-hidden ring-2 ring-white shadow-sm shrink-0 hover:ring-primary-light transition-all" title="我的">
+                    <img th:if="${avatarUrl != null and !avatarUrl.isEmpty()}" th:src="${avatarUrl}" alt="头像" class="w-full h-full object-cover" referrerpolicy="no-referrer" />
+                    <span th:unless="${avatarUrl != null and !avatarUrl.isEmpty()}" class="text-white text-xs font-bold">
+                        <span th:text="${username != null and !username.isEmpty() ? #strings.substring(username, 0, 1) : 'U'}">U</span>
+                    </span>
+                </a>
             </div>
         </div>
     </div>
