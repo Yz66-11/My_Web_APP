@@ -122,6 +122,7 @@ public class ApiController {
         Map<String, Object> result = buildUserMap(user);
         Long userId = user.getId();
         result.put("checkinCount", galleryUnlockRepository.countByUserId(userId));
+        result.put("visitedShopCount", shopVisitRepository.countByUserId(userId));
         result.put("favCount", userService.countUserFavorites(userId));
         result.put("postCount", postService.countByUser(userId));
         return ResponseEntity.ok(result);

@@ -9,6 +9,9 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+
+import jakarta.servlet.http.HttpServletResponse;
 
 @Configuration
 @EnableWebSecurity
@@ -56,6 +59,17 @@ public class SecurityConfig {
                                 "/upload-avatar"
                                 ).authenticated()
                         .anyRequest().authenticated()
+                )
+                // API 请求未认证时返回 JSON 401，而非重定向到 HTML 登录页
+                .exceptionHandling(exceptions -> exceptions
+                        .defaultAuthenticationEntryPointFor(
+                                (request, response, authException) -> {
+                                    response.setContentType("application/json;charset=UTF-8");
+                                    response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                                    response.getWriter().write("{\"error\":\"未登录\"}");
+                                },
+                                new AntPathRequestMatcher("/api/**")
+                        )
                 )
                 .headers(headers -> headers.frameOptions(frame -> frame.disable()))
                 .formLogin(form -> form
