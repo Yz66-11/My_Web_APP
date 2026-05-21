@@ -47,8 +47,12 @@ public class SecurityConfig {
                                 "/reset-password",
                                 "/css/**", "/js/**", "/images/**",
                                 "/uploads/**", "/h2-console/**").permitAll()
-                        // Android REST API：登录/注册公开，其余需认证
-                        .requestMatchers("/api/auth/login", "/api/auth/register").permitAll()
+                        // Android REST API：登录/注册/忘记密码/重置密码公开，其余需认证
+                        .requestMatchers("/api/auth/login", "/api/auth/register",
+                                "/api/auth/forgot-password",
+                                "/api/auth/verify-reset-code",
+                                "/api/auth/reset-password",
+                                "/api/auth/send-register-code").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         // 管理员专属
                         .requestMatchers("/admin/**").hasRole("ADMIN")

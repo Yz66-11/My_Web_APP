@@ -10,6 +10,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -171,12 +173,14 @@ public class PostController {
         }
         byte[] imageBytes = Base64.getDecoder().decode(data);
 
-        String dirPath = uploadDir + "/posts/";
+        String dirPath = Paths.get(uploadDir, "posts").toAbsolutePath().normalize().toString();
         File dir = new File(dirPath);
-        if (!dir.exists()) dir.mkdirs();
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IOException("无法创建上传目录: " + dirPath);
+        }
 
         String filename = userId + "_" + System.currentTimeMillis() + ".jpg";
-        File file = new File(dirPath + filename);
+        File file = new File(dirPath, filename);
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(imageBytes);
         }

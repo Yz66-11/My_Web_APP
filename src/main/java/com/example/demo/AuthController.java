@@ -18,6 +18,8 @@ import java.util.Random;
 import java.util.concurrent.ThreadLocalRandom;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.Base64;
 
 @Controller
@@ -30,6 +32,8 @@ public class AuthController {
     private final ShopService shopService;
     private final DishRepository dishRepository;
     private final GalleryUnlockRepository galleryUnlockRepository;
+    private final ShopVisitRepository shopVisitRepository;
+    private final PostService postService;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -37,7 +41,9 @@ public class AuthController {
     public AuthController(UserService userService, PasswordEncoder passwordEncoder,
                           EmailService emailService, GalleryService galleryService,
                           ShopService shopService, DishRepository dishRepository,
-                          GalleryUnlockRepository galleryUnlockRepository) {
+                          GalleryUnlockRepository galleryUnlockRepository,
+                          ShopVisitRepository shopVisitRepository,
+                          PostService postService) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
@@ -45,6 +51,8 @@ public class AuthController {
         this.shopService = shopService;
         this.dishRepository = dishRepository;
         this.galleryUnlockRepository = galleryUnlockRepository;
+        this.shopVisitRepository = shopVisitRepository;
+        this.postService = postService;
     }
 
     @GetMapping("/")
@@ -83,6 +91,8 @@ public class AuthController {
     @PostMapping("/register")
     public String processRegistration(@ModelAttribute("user") @Valid User user,
                                       @RequestParam("confirmPassword") String confirmPassword,
+                                      @RequestParam(value = "code", required = false) String code,
+                                      HttpSession session,
                                       BindingResult result, Model model) {
         if (!user.getPassword().equals(confirmPassword)) {
             model.addAttribute("error", "两次输入的密码不一致！");
@@ -90,6 +100,29 @@ public class AuthController {
         }
         if (result.hasErrors()) {
             model.addAttribute("error", "表单填写有误，请检查！");
+            return "register";
+        }
+        // 验证注册验证码
+        String sessionCode = (String) session.getAttribute("apiRegisterCode");
+        String sessionEmail = (String) session.getAttribute("apiRegisterEmail");
+        Long codeTime = (Long) session.getAttribute("apiRegisterCodeTime");
+        if (sessionCode == null || codeTime == null || sessionEmail == null) {
+            model.addAttribute("error", "请先获取验证码");
+            return "register";
+        }
+        if (!sessionEmail.equals(user.getEmail())) {
+            model.addAttribute("error", "邮箱不匹配，请重新获取验证码");
+            return "register";
+        }
+        if (System.currentTimeMillis() - codeTime > 5 * 60 * 1000L) {
+            session.removeAttribute("apiRegisterCode");
+            session.removeAttribute("apiRegisterEmail");
+            session.removeAttribute("apiRegisterCodeTime");
+            model.addAttribute("error", "验证码已过期，请重新获取");
+            return "register";
+        }
+        if (code == null || !sessionCode.equals(code.trim())) {
+            model.addAttribute("error", "验证码错误");
             return "register";
         }
         if (userService.existsByUsername(user.getUsername())) {
@@ -100,6 +133,11 @@ public class AuthController {
             model.addAttribute("error", "邮箱已被注册！");
             return "register";
         }
+        // 验证通过，清除验证码会话
+        session.removeAttribute("apiRegisterCode");
+        session.removeAttribute("apiRegisterEmail");
+        session.removeAttribute("apiRegisterCodeTime");
+
         userService.registerUser(user);
         return "redirect:/login?registered";
     }
@@ -120,9 +158,11 @@ public class AuthController {
                 model.addAttribute("bio", user.getBio());
                 model.addAttribute("displayGender", user.getDisplayGender());
                 model.addAttribute("avatarUrl", user.getAvatarUrl());
-                model.addAttribute("checkinCount", galleryUnlockRepository.countByUserId(userId));
-                model.addAttribute("galleryCount", galleryUnlockRepository.countByUserId(userId));
-                model.addAttribute("favCount", userService.countUserFavorites(userId));
+                // 四项统计数据，与 App 端一致
+                model.addAttribute("visitedShopCount", shopVisitRepository.countByUserId(userId));  // 打卡商家
+                model.addAttribute("checkinCount", galleryUnlockRepository.countByUserId(userId));  // 解锁菜品
+                model.addAttribute("favCount", userService.countUserFavorites(userId));             // 收藏数
+                model.addAttribute("postCount", postService.countByUser(userId));                   // 发帖数
             });
         }
         if (success != null) model.addAttribute("success", success);
@@ -270,12 +310,14 @@ public class AuthController {
         }
         byte[] imageBytes = Base64.getDecoder().decode(data);
 
-        String dirPath = uploadDir + "/checkin/";
+        String dirPath = Paths.get(uploadDir, "checkin").toAbsolutePath().normalize().toString();
         File dir = new File(dirPath);
-        if (!dir.exists()) dir.mkdirs();
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IOException("无法创建上传目录: " + dirPath);
+        }
 
         String filename = userId + "_" + System.currentTimeMillis() + ".jpg";
-        File file = new File(dirPath + filename);
+        File file = new File(dirPath, filename);
         try (FileOutputStream fos = new FileOutputStream(file)) {
             fos.write(imageBytes);
         }
@@ -284,9 +326,11 @@ public class AuthController {
     }
 
     private String saveAvatarFile(MultipartFile file, Long userId) throws Exception {
-        String dirPath = uploadDir + "/avatars/";
+        String dirPath = Paths.get(uploadDir, "avatars").toAbsolutePath().normalize().toString();
         File dir = new File(dirPath);
-        if (!dir.exists()) dir.mkdirs();
+        if (!dir.exists() && !dir.mkdirs()) {
+            throw new IOException("无法创建上传目录: " + dirPath);
+        }
 
         // 获取文件扩展名
         String originalName = file.getOriginalFilename();
@@ -295,7 +339,7 @@ public class AuthController {
             ext = originalName.substring(originalName.lastIndexOf(".") + 1);
         }
         String filename = userId + "_" + System.currentTimeMillis() + "." + ext;
-        File dest = new File(dirPath + filename);
+        File dest = new File(dirPath, filename);
         file.transferTo(dest);
 
         return "/uploads/avatars/" + filename;

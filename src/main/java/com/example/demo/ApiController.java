@@ -14,8 +14,12 @@ import jakarta.servlet.http.HttpSession;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.Principal;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 /**
@@ -34,9 +38,14 @@ public class ApiController {
     private final GalleryUnlockRepository galleryUnlockRepository;
     private final ShopVisitRepository shopVisitRepository;
     private final AuthenticationManager authenticationManager;
+    private final OrderService orderService;
+    private final EmailService emailService;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
+
+    // 验证码过期时间（5分钟），与 Web 端一致
+    private static final int CODE_EXPIRY_MINUTES = 5;
 
     public ApiController(UserService userService,
                          ShopService shopService,
@@ -45,7 +54,9 @@ public class ApiController {
                          DishRepository dishRepository,
                          GalleryUnlockRepository galleryUnlockRepository,
                          ShopVisitRepository shopVisitRepository,
-                         AuthenticationManager authenticationManager) {
+                         AuthenticationManager authenticationManager,
+                         OrderService orderService,
+                         EmailService emailService) {
         this.userService = userService;
         this.shopService = shopService;
         this.galleryService = galleryService;
@@ -54,6 +65,8 @@ public class ApiController {
         this.galleryUnlockRepository = galleryUnlockRepository;
         this.shopVisitRepository = shopVisitRepository;
         this.authenticationManager = authenticationManager;
+        this.orderService = orderService;
+        this.emailService = emailService;
     }
 
     // ============================================================
@@ -85,10 +98,12 @@ public class ApiController {
 
     /** POST /api/auth/register — 注册新用户 */
     @PostMapping("/auth/register")
-    public ResponseEntity<Map<String, Object>> register(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> register(
+            @RequestBody Map<String, String> body, HttpSession session) {
         String username = body.get("username");
         String email = body.get("email");
         String password = body.get("password");
+        String code = body.get("code");
 
         if (username == null || username.length() < 3 || username.length() > 20) {
             return ResponseEntity.badRequest().body(Map.of("error", "用户名长度须为3-20位"));
@@ -96,12 +111,39 @@ public class ApiController {
         if (password == null || password.length() < 6) {
             return ResponseEntity.badRequest().body(Map.of("error", "密码不能少于6位"));
         }
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "请输入邮箱"));
+        }
+        // 验证验证码
+        String sessionCode = (String) session.getAttribute("apiRegisterCode");
+        String sessionEmail = (String) session.getAttribute("apiRegisterEmail");
+        Long codeTime = (Long) session.getAttribute("apiRegisterCodeTime");
+        if (sessionCode == null || codeTime == null || sessionEmail == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "请先获取验证码"));
+        }
+        if (!sessionEmail.equals(email)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "邮箱不匹配，请重新获取验证码"));
+        }
+        if (System.currentTimeMillis() - codeTime > CODE_EXPIRY_MINUTES * 60 * 1000L) {
+            session.removeAttribute("apiRegisterCode");
+            session.removeAttribute("apiRegisterEmail");
+            session.removeAttribute("apiRegisterCodeTime");
+            return ResponseEntity.badRequest().body(Map.of("error", "验证码已过期，请重新获取"));
+        }
+        if (code == null || !sessionCode.equals(code.trim())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "验证码错误"));
+        }
         if (userService.existsByUsername(username)) {
             return ResponseEntity.badRequest().body(Map.of("error", "用户名已存在"));
         }
         if (userService.existsByEmail(email)) {
             return ResponseEntity.badRequest().body(Map.of("error", "邮箱已被注册"));
         }
+
+        // 验证通过，清除验证码会话
+        session.removeAttribute("apiRegisterCode");
+        session.removeAttribute("apiRegisterEmail");
+        session.removeAttribute("apiRegisterCodeTime");
 
         User user = new User();
         user.setUsername(username);
@@ -178,13 +220,14 @@ public class ApiController {
             User user = userService.findByUsername(principal.getName())
                     .orElseThrow(() -> new RuntimeException("用户不存在"));
 
-            String dirPath = uploadDir + "/avatars/";
+            String dirPath = Paths.get(uploadDir, "avatars").toAbsolutePath().normalize().toString();
             File dir = new File(dirPath);
             if (!dir.exists()) dir.mkdirs();
             String orig = file.getOriginalFilename();
             String ext = (orig != null && orig.contains(".")) ? orig.substring(orig.lastIndexOf(".") + 1) : "jpg";
             String filename = user.getId() + "_" + System.currentTimeMillis() + "." + ext;
-            file.transferTo(new File(dirPath + filename));
+            File dest = new File(dirPath, filename);
+            Files.write(dest.toPath(), file.getBytes());
             String avatarUrl = "/uploads/avatars/" + filename;
 
             user.setAvatarUrl(avatarUrl);
@@ -202,6 +245,247 @@ public class ApiController {
         HttpSession session = request.getSession(false);
         if (session != null) session.invalidate();
         return ResponseEntity.ok(Map.of("success", true));
+    }
+
+    // ==================== Forgot Password ====================
+
+    /** POST /api/auth/forgot-password — 发送重置密码验证码 */
+    @PostMapping("/auth/forgot-password")
+    public ResponseEntity<Map<String, Object>> forgotPassword(
+            @RequestBody Map<String, String> body, HttpSession session) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "请输入邮箱"));
+        }
+        Optional<User> userOpt = userService.findByEmail(email);
+        if (userOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "该邮箱未注册"));
+        }
+        // 生成 6 位验证码
+        String code = String.format("%06d", ThreadLocalRandom.current().nextInt(1000000));
+        session.setAttribute("apiResetCode", code);
+        session.setAttribute("apiResetEmail", email);
+        session.setAttribute("apiResetCodeTime", System.currentTimeMillis());
+        try {
+            emailService.sendPasswordResetCode(email, code);
+            return ResponseEntity.ok(Map.of("success", true, "message", "验证码已发送到邮箱"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "邮件发送失败，请稍后重试"));
+        }
+    }
+
+    /** POST /api/auth/verify-reset-code — 验证重置密码验证码 */
+    @PostMapping("/auth/verify-reset-code")
+    public ResponseEntity<Map<String, Object>> verifyResetCode(
+            @RequestBody Map<String, String> body, HttpSession session) {
+        String email = body.get("email");
+        String code = body.get("code");
+        if (code == null || code.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "请输入验证码"));
+        }
+        String sessionEmail = (String) session.getAttribute("apiResetEmail");
+        String sessionCode = (String) session.getAttribute("apiResetCode");
+        Long codeTime = (Long) session.getAttribute("apiResetCodeTime");
+        if (sessionCode == null || codeTime == null || sessionEmail == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "请先获取验证码"));
+        }
+        if (!sessionEmail.equals(email)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "邮箱不匹配，请重新获取验证码"));
+        }
+        if (System.currentTimeMillis() - codeTime > CODE_EXPIRY_MINUTES * 60 * 1000L) {
+            session.removeAttribute("apiResetCode");
+            session.removeAttribute("apiResetEmail");
+            session.removeAttribute("apiResetCodeTime");
+            return ResponseEntity.badRequest().body(Map.of("error", "验证码已过期，请重新获取"));
+        }
+        if (!sessionCode.equals(code.trim())) {
+            return ResponseEntity.badRequest().body(Map.of("error", "验证码错误"));
+        }
+        // 验证通过，清除 code 但保留 verified 标记
+        session.removeAttribute("apiResetCode");
+        session.removeAttribute("apiResetCodeTime");
+        session.setAttribute("apiResetVerified", true);
+        return ResponseEntity.ok(Map.of("success", true, "message", "验证成功"));
+    }
+
+    /** POST /api/auth/reset-password — 重置密码（需先验证验证码） */
+    @PostMapping("/auth/reset-password")
+    public ResponseEntity<Map<String, Object>> resetPassword(
+            @RequestBody Map<String, String> body, HttpSession session) {
+        Boolean verified = (Boolean) session.getAttribute("apiResetVerified");
+        String email = (String) session.getAttribute("apiResetEmail");
+        if (!Boolean.TRUE.equals(verified) || email == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "请先验证邮箱"));
+        }
+        String newPassword = body.get("newPassword");
+        if (newPassword == null || newPassword.length() < 6) {
+            return ResponseEntity.badRequest().body(Map.of("error", "密码不能少于6位"));
+        }
+        try {
+            Optional<User> userOpt = userService.findByEmail(email);
+            if (userOpt.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "用户不存在"));
+            }
+            userService.resetPassword(userOpt.get().getUsername(), newPassword);
+            session.removeAttribute("apiResetEmail");
+            session.removeAttribute("apiResetVerified");
+            return ResponseEntity.ok(Map.of("success", true, "message", "密码重置成功"));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ==================== Register Verification Code ====================
+
+    /** POST /api/auth/send-register-code — 发送注册验证码到邮箱 */
+    @PostMapping("/auth/send-register-code")
+    public ResponseEntity<Map<String, Object>> sendRegisterCode(
+            @RequestBody Map<String, String> body, HttpSession session) {
+        String email = body.get("email");
+        if (email == null || email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "请输入邮箱"));
+        }
+        if (userService.existsByEmail(email)) {
+            return ResponseEntity.badRequest().body(Map.of("error", "该邮箱已被注册"));
+        }
+        String code = String.format("%06d", ThreadLocalRandom.current().nextInt(1000000));
+        session.setAttribute("apiRegisterCode", code);
+        session.setAttribute("apiRegisterEmail", email);
+        session.setAttribute("apiRegisterCodeTime", System.currentTimeMillis());
+        try {
+            emailService.sendRegisterCode(email, code);
+            return ResponseEntity.ok(Map.of("success", true, "message", "验证码已发送到邮箱"));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "邮件发送失败，请稍后重试"));
+        }
+    }
+
+    // ============================================================
+    // MY SHOPS / SELLER APPLY
+    // ============================================================
+
+    /** GET /api/my-shops — 当前用户的店铺列表 */
+    @GetMapping("/my-shops")
+    public ResponseEntity<List<Map<String, Object>>> getMyShops(Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        Long userId = getPrincipalUserId(principal);
+        List<Shop> shops = shopService.getShopsByOwner(userId);
+        List<Map<String, Object>> result = shops.stream()
+                .map(shop -> buildShopMap(shop, false))
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    /** POST /api/shop/apply — 提交商家入驻申请 */
+    @PostMapping("/shop/apply")
+    public ResponseEntity<Map<String, Object>> applyShop(
+            @RequestBody Map<String, Object> body, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body(Map.of("error", "未登录"));
+        try {
+            User owner = userService.findByUsername(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+
+            Shop shop = new Shop();
+            shop.setShopName((String) body.getOrDefault("shopName", ""));
+            shop.setCategory((String) body.getOrDefault("category", ""));
+            shop.setCity((String) body.getOrDefault("city", ""));
+            shop.setDistrict((String) body.getOrDefault("district", ""));
+            shop.setLocation((String) body.getOrDefault("location", ""));
+            shop.setPhone((String) body.getOrDefault("phone", ""));
+            shop.setIntroduction((String) body.getOrDefault("introduction", ""));
+
+            if (shop.getShopName() == null || shop.getShopName().isBlank()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "店铺名称不能为空"));
+            }
+
+            shopService.applyShop(shop, owner);
+            return ResponseEntity.ok(Map.of("success", true, "message", "入驻申请已提交，请等待管理员审核"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", "申请失败：" + e.getMessage()));
+        }
+    }
+
+    // ============================================================
+    // ORDERS
+    // ============================================================
+
+    /** POST /api/orders/create — 创建订单 */
+    @PostMapping("/orders/create")
+    public ResponseEntity<Map<String, Object>> createOrder(
+            @RequestBody Map<String, Object> body, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body(Map.of("error", "未登录"));
+        try {
+            User user = userService.findByUsername(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("用户不存在"));
+
+            Long shopId = ((Number) body.get("shopId")).longValue();
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> items = (List<Map<String, Object>>) body.get("items");
+            String note = (String) body.getOrDefault("note", "");
+
+            Order order = orderService.createOrder(user, shopId, items, note);
+            Map<String, Object> result = new LinkedHashMap<>();
+            result.put("success", true);
+            result.put("orderId", order.getId());
+            result.put("totalAmount", order.getTotalAmount());
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /** GET /api/orders/my — 我的订单列表 */
+    @GetMapping("/orders/my")
+    public ResponseEntity<List<Map<String, Object>>> getMyOrders(Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).build();
+        Long userId = getPrincipalUserId(principal);
+        List<Order> orders = orderService.getMyOrders(userId);
+        List<Map<String, Object>> result = orders.stream()
+                .map(this::buildOrderMap)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(result);
+    }
+
+    /** GET /api/orders/{id} — 订单详情 */
+    @GetMapping("/orders/{id}")
+    public ResponseEntity<Map<String, Object>> getOrderDetail(
+            @PathVariable Long id, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body(Map.of("error", "未登录"));
+        try {
+            Order order = orderService.getOrderDetail(id);
+            Map<String, Object> result = buildOrderMap(order);
+            List<Map<String, Object>> items = orderService.getOrderItems(id).stream()
+                    .map(this::buildOrderItemMap)
+                    .collect(Collectors.toList());
+            result.put("items", items);
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ============================================================
+    // REGIONS
+    // ============================================================
+
+    /** GET /api/regions — 省市区数据 */
+    @GetMapping("/regions")
+    public ResponseEntity<Map<String, Object>> getRegions() {
+        try {
+            // 从静态 JS 文件中加载省市区数据，去掉 JS 包装后返回 JSON
+            InputStream is = getClass().getResourceAsStream("/static/js/region-data.js");
+            if (is == null) return ResponseEntity.notFound().build();
+            String content = new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            is.close();
+            // 去掉 const REGION_DATA = 前缀和末尾的 ; 以及注释行
+            content = content.replaceAll("(?s)/\\*.*?\\*/", "").trim();
+            content = content.replace("const REGION_DATA = ", "").replaceAll(";$", "").trim();
+            @SuppressWarnings("unchecked")
+            Map<String, Object> regions = new com.google.gson.Gson().fromJson(content, Map.class);
+            return ResponseEntity.ok(regions);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Map.of("error", "加载失败"));
+        }
     }
 
     // ============================================================
@@ -521,6 +805,15 @@ public class ApiController {
         return ResponseEntity.ok(Map.of("favorited", favorited));
     }
 
+    /** POST /api/posts/{id}/share — 分享（增加分享计数） */
+    @PostMapping("/posts/{id}/share")
+    public ResponseEntity<Map<String, Object>> sharePost(
+            @PathVariable Long id, Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body(Map.of("error", "未登录"));
+        postService.incrementShareCount(id);
+        return ResponseEntity.ok(Map.of("success", true));
+    }
+
     /** POST /api/posts/{id}/comment — 提交评论 */
     @PostMapping("/posts/{id}/comment")
     public ResponseEntity<Map<String, Object>> addComment(
@@ -602,6 +895,28 @@ public class ApiController {
         m.put("imageUrl", dish.getImageUrl());
         m.put("status", dish.getStatus() != null ? dish.getStatus().name() : null);
         m.put("shopId", dish.getShop() != null ? dish.getShop().getId() : null);
+        return m;
+    }
+
+    private Map<String, Object> buildOrderMap(Order order) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", order.getId());
+        m.put("shopId", order.getShop() != null ? order.getShop().getId() : null);
+        m.put("shopName", order.getShop() != null ? order.getShop().getShopName() : null);
+        m.put("totalAmount", order.getTotalAmount());
+        m.put("status", order.getStatus() != null ? order.getStatus().name() : null);
+        m.put("note", order.getNote());
+        m.put("createdAt", order.getCreatedAt() != null ? order.getCreatedAt().toString() : null);
+        return m;
+    }
+
+    private Map<String, Object> buildOrderItemMap(OrderItem item) {
+        Map<String, Object> m = new LinkedHashMap<>();
+        m.put("id", item.getId());
+        m.put("dishId", item.getDishId());
+        m.put("dishName", item.getDishName());
+        m.put("price", item.getPrice());
+        m.put("quantity", item.getQuantity());
         return m;
     }
 
