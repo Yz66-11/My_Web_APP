@@ -451,6 +451,18 @@ public class AuthController {
                     e.getMessage(), java.nio.charset.StandardCharsets.UTF_8);
         }
     }
+
+    // ==================== 服务条款 & 隐私政策 ====================
+
+    @GetMapping("/terms")
+    public String showTerms() {
+        return "terms";
+    }
+
+    @GetMapping("/privacy")
+    public String showPrivacy() {
+        return "privacy";
+    }
 }
 
 class CheckinRequest {

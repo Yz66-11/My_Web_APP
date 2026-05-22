@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>管理后台 - 美食打卡</title>
     <link rel="stylesheet" href="/css/common.css">
+    <link rel="preload" href="/audio/1.m4a" as="audio">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="/js/app.js"></script>
     <script>
@@ -298,5 +299,15 @@
     </div>
 </div>
 
+<script>
+if (sessionStorage.getItem('playLoginSound') === 'true') {
+    sessionStorage.removeItem('playLoginSound');
+    if (typeof SoundManager !== 'undefined') {
+        SoundManager.play('/audio/1.m4a');
+    } else {
+        var a = new Audio('/audio/1.m4a'); a.volume = 0.5; a.play().catch(function(){});
+    }
+}
+</script>
 </body>
 </html>

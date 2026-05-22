@@ -21,7 +21,16 @@
         }
     </script>
     <link rel="stylesheet" href="/css/common.css">
+    <link rel="preload" href="/audio/1.m4a" as="audio">
     <script defer src="/js/app.js"></script>
+    <script>
+    // 尽早触发 1.m4a 的浏览器预缓冲，确保跨页面跳转后能瞬时播放
+    (function() {
+        var a = new Audio('/audio/1.m4a');
+        a.preload = 'auto';
+        a.load();
+    })();
+    </script>
 </head>
 <body class="min-h-screen bg-warm relative overflow-hidden">
     <!-- Decorative blobs -->
@@ -74,7 +83,7 @@
                         <p class="text-sm" th:text="${success}">成功消息</p>
                     </div>
 
-                    <form action="/login" method="POST" class="space-y-5">
+                    <form action="/login" method="POST" class="space-y-5" onsubmit="sessionStorage.setItem('playLoginSound','true')">
                         <!-- Username Field -->
                         <div class="space-y-2">
                             <label for="username" class="text-sm font-medium text-stone-600">用户名</label>

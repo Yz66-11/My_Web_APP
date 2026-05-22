@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${post.title + ' - 美食打卡'}">帖子详情</title>
     <link rel="stylesheet" href="/css/common.css">
+    <link rel="preload" href="/audio/3.m4a" as="audio">
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="/js/app.js"></script>
     <script>
@@ -64,9 +65,9 @@
                 </div>
             </div>
             <div class="flex items-center gap-2">
-                <form th:if="${currentUserId != null and post.author != null and currentUserId == post.author.id}" method="post"
-                      th:action="@{/post/{id}/delete(id=${post.id})}"
-                      onsubmit="return confirm('确定要删除这篇帖子吗？')">
+                <form th:if="${currentUserId != null and post.author != null and currentUserId == post.author.id}"
+                      method="post" th:action="@{/post/{id}/delete(id=${post.id})}"
+                      onsubmit="return confirm('确定要删除这篇帖子吗？')" class="inline">
                     <button type="submit" class="text-xs text-stone-300 hover:text-red-500 transition-colors">删除</button>
                 </form>
                 <span th:if="${post.status != null and post.status.name() == 'PENDING'}" class="badge badge-warning ml-2">待审核</span>
@@ -99,13 +100,13 @@
 
         <!-- Stats -->
         <div class="flex items-center gap-5 sm:gap-6 border-t border-stone-100 px-5 py-3.5 text-sm text-stone-500">
-            <form method="post" th:action="@{/post/{id}/like(id=${post.id})}" class="flex items-center gap-1.5 cursor-pointer transition-colors">
+            <form method="post" th:action="@{/post/{id}/like(id=${post.id})}" class="flex items-center gap-1.5 cursor-pointer transition-colors" onsubmit="return likePost(this, event, '/audio/3.m4a')">
                 <button type="submit" class="flex items-center gap-1.5 active:scale-90 transition-transform py-1"
                         th:classappend="${liked ? 'text-red-500' : 'hover:text-red-500'}">
-                    <svg th:if="${liked}" class="w-6 h-6" fill="#ef4444" viewBox="0 0 24 24"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/></svg>
-                    <svg th:unless="${liked}" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>
+                    <svg th:classappend="${liked ? '' : 'hidden'}" class="w-6 h-6" fill="#ef4444" viewBox="0 0 24 24"><path d="M11.645 20.91l-.007-.003-.022-.012a15.247 15.247 0 01-.383-.218 25.18 25.18 0 01-4.244-3.17C4.688 15.36 2.25 12.174 2.25 8.25 2.25 5.322 4.714 3 7.688 3A5.5 5.5 0 0112 5.052 5.5 5.5 0 0116.313 3c2.973 0 5.437 2.322 5.437 5.25 0 3.925-2.438 7.111-4.739 9.256a25.175 25.175 0 01-4.244 3.17 15.247 15.247 0 01-.383.219l-.022.012-.007.004-.003.001a.752.752 0 01-.704 0l-.003-.001z"/></svg>
+                    <svg th:classappend="${liked} ? 'hidden' : ''" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg>
                     <span th:text="${post.likeCount}">0</span>
-                    <span class="hidden sm:inline" th:text="${liked ? '已赞' : '点赞'}">点赞</span>
+                    <span class="hidden sm:inline like-label" th:text="${liked ? '已赞' : '点赞'}">点赞</span>
                 </button>
             </form>
             <span class="flex items-center gap-1.5 py-1">
@@ -113,7 +114,7 @@
                 <span th:text="${post.commentCount}">0</span>
                 <span class="text-xs hidden sm:inline">评论</span>
             </span>
-            <form method="post" th:action="@{/post/{id}/favorite(id=${post.id})}" class="flex items-center gap-1.5 cursor-pointer transition-colors">
+            <form method="post" th:action="@{/post/{id}/favorite(id=${post.id})}" class="flex items-center gap-1.5 cursor-pointer transition-colors" onsubmit="return favoritePost(this, event)">
                 <button type="submit" class="flex items-center gap-1.5 active:scale-90 transition-transform py-1"
                         th:classappend="${favorited ? 'text-amber-500' : 'hover:text-amber-500'}">
                     <svg th:if="${favorited}" class="w-6 h-6" fill="#eab308" viewBox="0 0 24 24"><path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd"/></svg>
@@ -138,7 +139,7 @@
         </div>
 
         <!-- Comment Input -->
-        <form method="post" th:action="@{/post/{id}/comment(id=${post.id})}" class="px-5 py-4 border-b border-stone-100">
+        <form method="post" th:action="@{/post/{id}/comment(id=${post.id})}" class="px-5 py-4 border-b border-stone-100" onsubmit="return submitComment(this, event)">
             <div class="flex gap-3">
                 <input type="text" name="content" required placeholder="写一条评论..." maxlength="500"
                        class="input-warm flex-1 !rounded-full"/>
@@ -169,27 +170,122 @@
             </div>
             <form th:if="${currentUserId != null and c.author != null and (currentUserId == c.author.id or isAdmin)}"
                   method="post"
-                  th:action="@{/admin/comment/{id}/delete(id=${c.id})}"
-                  class="shrink-0">
-                <input type="hidden" name="page" value="0"/>
-                <button type="submit" class="text-xs text-stone-400 hover:text-red-500 transition-colors" onclick="return confirm('确定删除？')">删除</button>
+                  th:action="${isAdmin ? '/admin/comment/' + c.id + '/delete' : '/post/' + post.id + '/comment/delete?id=' + c.id}"
+                  onsubmit="return confirm('确定删除？')" class="inline">
+                <button type="submit" class="text-xs text-stone-400 hover:text-red-500 transition-colors">删除</button>
             </form>
         </div>
     </div>
 </div>
 
 <script>
-function sharePost(postId) {
-    fetch('/post/' + postId + '/share', { method: 'POST' })
-        .then(() => {
-            if (navigator.share) {
-                navigator.share({ title: document.title, url: location.href }).catch(() => {});
+/** 点赞：AJAX 提交，播放音效，动态更新 UI（不刷新页面） */
+function likePost(form, event, src) {
+    event.preventDefault();
+    SoundManager.play(src);
+    var formData = new FormData(form);
+    fetch(form.action, { method: 'POST', body: new URLSearchParams(formData) })
+        .then(function(resp) {
+            if (!resp.ok) { window.location.reload(); return; }
+            var btn = form.querySelector('button');
+            var countEl = btn.querySelector('span:first-of-type');
+            var labelEl = btn.querySelector('.like-label');
+            var heartFilled = btn.querySelector('svg[fill="#ef4444"]');
+            var heartOutline = btn.querySelector('svg[fill="none"]');
+            var count = parseInt(countEl.textContent) || 0;
+            var liked = btn.classList.contains('text-red-500');
+            if (liked) {
+                btn.classList.remove('text-red-500');
+                countEl.textContent = Math.max(0, count - 1);
+                if (heartFilled) heartFilled.classList.add('hidden');
+                if (heartOutline) heartOutline.classList.remove('hidden');
+                if (labelEl) labelEl.textContent = '点赞';
             } else {
-                navigator.clipboard.writeText(location.href).then(() => alert('链接已复制到剪贴板'));
+                btn.classList.add('text-red-500');
+                countEl.textContent = count + 1;
+                if (heartFilled) heartFilled.classList.remove('hidden');
+                if (heartOutline) heartOutline.classList.add('hidden');
+                if (labelEl) labelEl.textContent = '已赞';
             }
-            location.reload();
-        });
+        })
+        .catch(function() { window.location.reload(); });
+    return false;
 }
+
+/** 收藏：AJAX 提交，动态更新 UI（不刷新页面） */
+function favoritePost(form, event) {
+    event.preventDefault();
+    var formData = new FormData(form);
+    fetch(form.action, { method: 'POST', body: new URLSearchParams(formData) })
+        .then(function(resp) {
+            if (!resp.ok) { window.location.reload(); return; }
+            var btn = form.querySelector('button');
+            var countEl = btn.querySelector('span:first-of-type');
+            var labelEl = btn.querySelector('.hidden.sm\\:inline');
+            var starFilled = btn.querySelector('svg[fill="#eab308"]');
+            var starOutline = btn.querySelector('svg[fill="none"]');
+            var count = parseInt(countEl.textContent) || 0;
+            var favorited = btn.classList.contains('text-amber-500');
+            if (favorited) {
+                btn.classList.remove('text-amber-500');
+                countEl.textContent = Math.max(0, count - 1);
+                if (starFilled) starFilled.classList.add('hidden');
+                if (starOutline) starOutline.classList.remove('hidden');
+                if (labelEl) labelEl.textContent = '收藏';
+            } else {
+                btn.classList.add('text-amber-500');
+                countEl.textContent = count + 1;
+                if (starFilled) starFilled.classList.remove('hidden');
+                if (starOutline) starOutline.classList.add('hidden');
+                if (labelEl) labelEl.textContent = '已收藏';
+            }
+        })
+        .catch(function() { window.location.reload(); });
+    return false;
+}
+
+/** 分享：异步增加计数并调用系统分享，不刷新页面 */
+function sharePost(postId) {
+    fetch('/post/' + postId + '/share', { method: 'POST' }).catch(function(){});
+    if (navigator.share) {
+        navigator.share({ title: document.title, url: location.href }).catch(function(){});
+    } else {
+        navigator.clipboard.writeText(location.href)
+            .then(function() { alert('链接已复制到剪贴板'); })
+            .catch(function(){});
+    }
+}
+
+/** 提交评论：AJAX 提交，动态追加评论列表，不刷新页面 */
+function submitComment(form, event) {
+    event.preventDefault();
+    var btn = form.querySelector('button');
+    var input = form.querySelector('input[name="content"]');
+    var content = input.value.trim();
+    if (!content) return false;
+    btn.disabled = true;
+    btn.textContent = '发送中...';
+    var formData = new FormData(form);
+    fetch(form.action, { method: 'POST', body: new URLSearchParams(formData) })
+        .then(function(resp) {
+            if (!resp.ok) { window.location.reload(); return; }
+            input.value = '';
+            btn.disabled = false;
+            btn.textContent = '发送';
+            // 追加新评论到列表
+            var list = document.querySelector('.glass-strong .border-b:last-child')?.parentElement;
+            // 找不到就刷新页面兜底
+            if (!list) { window.location.reload(); return; }
+            // 移除空状态提示
+            var empty = list.querySelector('.text-center.py-10');
+            if (empty) empty.remove();
+            window.location.reload(); // 暂用刷新，因为服务端渲染评论需要完整数据
+        })
+        .catch(function() { btn.disabled = false; btn.textContent = '发送'; window.location.reload(); });
+    return false;
+}
+
+
 </script>
 </body>
 </html>

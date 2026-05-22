@@ -19,6 +19,8 @@
         }
     </script>
     <link rel="stylesheet" href="/css/common.css">
+    <link rel="preload" href="/audio/2.m4a" as="audio">
+    <script defer src="/js/app.js"></script>
     <style>
         #camera-preview { max-width: 100%; border-radius: 1rem; }
         #captured-image { max-width: 100%; border-radius: 1rem; }
@@ -101,11 +103,17 @@
 
             <div id="camera-section" class="text-center">
                 <video id="camera-preview" autoplay playsinline class="mb-4 mx-auto bg-stone-900 rounded-xl"></video>
-                <div class="flex justify-center gap-3">
-                    <button onclick="startCamera()" class="btn-ghost px-6 py-3 font-semibold flex items-center gap-2">
+                <div id="camera-error-msg" class="text-red-500 text-sm mb-3 hidden"></div>
+                <div class="flex justify-center gap-3 flex-wrap">
+                    <button onclick="startCamera()" id="start-camera-btn" class="btn-ghost px-6 py-3 font-semibold flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
                         打开相机
                     </button>
+                    <button onclick="document.getElementById('file-input').click()" class="btn-ghost px-6 py-3 font-semibold flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                        从相册选择
+                    </button>
+                    <input type="file" id="file-input" accept="image/*" class="hidden" onchange="handleFilePick(event)">
                     <button onclick="capturePhoto()" id="capture-btn" class="btn-primary px-6 py-3 font-semibold hidden flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                         拍照
@@ -155,14 +163,64 @@ function getShopId() { return document.getElementById('hd-shopId').value; }
 function getCity() { return document.getElementById('hd-city').value; }
 function getDistrict() { return document.getElementById('hd-district').value; }
 
+function showCameraError(msg) {
+    var el = document.getElementById('camera-error-msg');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    document.getElementById('start-camera-btn').disabled = false;
+    document.getElementById('start-camera-btn').innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> 打开相机';
+}
+
 async function startCamera() {
+    var btn = document.getElementById('start-camera-btn');
+    btn.disabled = true;
+    btn.innerHTML = '<svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg> 请求中...';
+
+    document.getElementById('camera-error-msg').classList.add('hidden');
+
     try {
-        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        // 检查是否在安全上下文（HTTPS / localhost）
+        if (window.isSecureContext !== true) {
+            showCameraError('相机功能需要 HTTPS 或 localhost 环境才能使用。请检查您的连接方式。');
+            return;
+        }
+        // 检查浏览器是否支持 getUserMedia
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            showCameraError('当前浏览器不支持相机功能，请使用最新版 Chrome、Safari 或 Edge 浏览器。');
+            return;
+        }
+        // 先尝试后置摄像头
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false });
+        } catch (firstErr) {
+            // 后置摄像头不可用（如只有前置摄像头的设备），尝试默认摄像头
+            console.warn('后置摄像头不可用，尝试默认摄像头:', firstErr);
+            stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
         const video = document.getElementById('camera-preview');
         video.srcObject = stream;
         document.getElementById('capture-btn').classList.remove('hidden');
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> 打开相机';
     } catch (error) {
-        alert('无法访问相机，请检查权限设置');
+        btn.disabled = false;
+        btn.innerHTML = '<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg> 打开相机';
+
+        var errMsg = '无法访问相机：';
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+            errMsg += '相机权限被拒绝。请在浏览器地址栏左侧点击锁图标或相机图标，将相机权限改为"允许"，然后刷新页面重试。';
+        } else if (error.name === 'NotFoundError') {
+            errMsg += '未检测到摄像头设备。您可以改用从相册选择图片。';
+        } else if (error.name === 'NotReadableError') {
+            errMsg += '摄像头被其他应用占用，请关闭其他使用摄像头的程序后重试。';
+        } else if (error.name === 'OverconstrainedError') {
+            errMsg += '不支持的摄像头参数。请尝试使用从相册选择图片。';
+        } else if (error.name === 'AbortError') {
+            errMsg += '相机访问被中断，请重试。';
+        } else {
+            errMsg += error.message || '未知错误';
+        }
+        showCameraError(errMsg);
         console.error('Camera error:', error);
     }
 }
@@ -180,7 +238,7 @@ function capturePhoto() {
     capturedImageData = canvas.toDataURL('image/jpeg');
     image.src = capturedImageData;
 
-    if (stream) { stream.getTracks().forEach(track => track.stop()); }
+    if (stream) { stream.getTracks().forEach(track => track.stop()); stream = null; }
 
     document.getElementById('camera-section').classList.add('hidden');
     document.getElementById('image-section').classList.remove('hidden');
@@ -190,7 +248,21 @@ function retakePhoto() {
     capturedImageData = null;
     document.getElementById('camera-section').classList.remove('hidden');
     document.getElementById('image-section').classList.add('hidden');
-    startCamera();
+}
+
+function handleFilePick(event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) return;
+
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        capturedImageData = e.target.result;
+        document.getElementById('captured-image').src = capturedImageData;
+        document.getElementById('camera-section').classList.add('hidden');
+        document.getElementById('image-section').classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+    event.target.value = '';
 }
 
 async function submitCheckin() {
@@ -225,18 +297,34 @@ async function submitCheckin() {
         });
         const result = await resp.json();
         if (result.success) {
-            // 如果来自商家页面，打卡后跳转回商家页面
-            const fromParam = new URLSearchParams(window.location.search).get('from');
-            if (fromParam && fromParam.startsWith('merchant-')) {
-                const shopId = fromParam.replace('merchant-', '');
-                window.location.href = '/merchant/' + shopId;
+            // 首次解锁（非重复打卡）才播放音效并延迟导航
+            if (result.message && result.message.indexOf('打卡成功') >= 0) {
+                var targetUrl = (function() {
+                    var fromParam = new URLSearchParams(window.location.search).get('from');
+                    if (fromParam && fromParam.startsWith('merchant-')) {
+                        return '/merchant/' + fromParam.replace('merchant-', '');
+                    }
+                    var params = new URLSearchParams();
+                    if (getShopId()) params.set('shopId', getShopId());
+                    if (getCity()) params.set('city', getCity());
+                    if (getDistrict()) params.set('district', getDistrict());
+                    var qs = params.toString();
+                    return '/food-gallery' + (qs ? '?' + qs : '');
+                })();
+                playSoundAndNavigate('/audio/2.m4a', targetUrl);
             } else {
-                const params = new URLSearchParams();
-                if (getShopId()) params.set('shopId', getShopId());
-                if (getCity()) params.set('city', getCity());
-                if (getDistrict()) params.set('district', getDistrict());
-                const qs = params.toString();
-                window.location.href = '/food-gallery' + (qs ? '?' + qs : '');
+                // 已解锁过的普通打卡，直接跳转
+                var fromParam = new URLSearchParams(window.location.search).get('from');
+                if (fromParam && fromParam.startsWith('merchant-')) {
+                    window.location.href = '/merchant/' + fromParam.replace('merchant-', '');
+                } else {
+                    var params = new URLSearchParams();
+                    if (getShopId()) params.set('shopId', getShopId());
+                    if (getCity()) params.set('city', getCity());
+                    if (getDistrict()) params.set('district', getDistrict());
+                    var qs = params.toString();
+                    window.location.href = '/food-gallery' + (qs ? '?' + qs : '');
+                }
             }
         } else {
             alert(result.message);

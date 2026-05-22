@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>服务条款 - 美食打卡</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316', 'primary-dark': '#EA580C', 'primary-light': '#FDBA74',
+                    },
+                    fontFamily: { sans: ['Noto Sans SC', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-bg-warm">
+    <nav class="nav-glass sticky top-0 z-50">
+        <div class="max-w-3xl mx-auto px-4">
+            <div class="flex justify-between items-center h-14">
+                <a class="flex items-center gap-2 text-xl font-bold text-primary-dark" href="/">
+                    <span>美食打卡</span>
+                </a>
+                <a href="/register" class="text-sm text-primary hover:text-primary-dark transition-colors">&larr; 返回注册</a>
+            </div>
+        </div>
+    </nav>
+    <div class="max-w-3xl mx-auto px-4 py-8">
+        <div class="card-premium p-8 dish-card">
+            <h1 class="text-2xl font-bold text-stone-900 mb-6">服务条款</h1>
+            <div class="text-sm text-stone-600 leading-relaxed space-y-4">
+                <p>欢迎使用「美食打卡」平台（以下简称"本平台"）。在注册和使用本平台服务前，请仔细阅读以下条款。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">1. 服务说明</h2>
+                <p>本平台为用户提供美食打卡、帖子发布、商家信息浏览、图鉴收集等服务。平台有权根据业务发展需要调整服务内容。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">2. 用户注册</h2>
+                <p>用户须提供真实、准确的注册信息。注册成功后，用户应妥善保管账号和密码，对使用该账号进行的所有活动负责。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">3. 用户行为规范</h2>
+                <p>用户承诺在使用本平台服务时遵守法律法规，不得发布违法、虚假、侵权或骚扰性内容。用户对其发布的内容承担全部法律责任。</p>
+                <p>禁止利用本平台从事任何违法违规活动，包括但不限于传播色情、暴力、赌博等信息。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">4. 知识产权</h2>
+                <p>用户在本平台发布的内容，知识产权归用户所有。用户授予平台在合理范围内使用、展示这些内容的许可。</p>
+                <p>平台的名称、标识、界面设计等知识产权归平台所有。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">5. 免责声明</h2>
+                <p>平台不对用户发布的内容的真实性、准确性作保证。用户因使用本平台服务产生的风险由用户自行承担。</p>
+                <p>平台有权在必要时修改服务条款，修改后的条款一经发布即生效。如用户不同意修改，应停止使用本平台服务。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">6. 终止服务</h2>
+                <p>平台有权对违反本条款的用户采取警告、限制功能、封禁账号等措施，并保留追究法律责任的权利。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">7. 联系方式</h2>
+                <p>如对本条款有任何疑问，请通过平台内反馈渠道联系我们。</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

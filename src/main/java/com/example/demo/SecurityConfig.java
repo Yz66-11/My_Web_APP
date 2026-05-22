@@ -6,9 +6,11 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -19,10 +21,14 @@ public class SecurityConfig {
 
     private final AuthSuccessHandler authSuccessHandler;
     private final AuthFailureHandler authFailureHandler;
+    private final JwtAuthFilter jwtAuthFilter;
 
-    public SecurityConfig(AuthSuccessHandler authSuccessHandler, AuthFailureHandler authFailureHandler) {
+    public SecurityConfig(AuthSuccessHandler authSuccessHandler,
+                          AuthFailureHandler authFailureHandler,
+                          JwtAuthFilter jwtAuthFilter) {
         this.authSuccessHandler = authSuccessHandler;
         this.authFailureHandler = authFailureHandler;
+        this.jwtAuthFilter = jwtAuthFilter;
     }
 
     @Bean
@@ -40,15 +46,21 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(csrf -> csrf.disable())
+                // API 请求不依赖 Session
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                )
                 .authorizeHttpRequests(authz -> authz
                         // 公开路径
                         .requestMatchers("/", "/index.html", "/login", "/register",
                                 "/forgot-password", "/verify-token",
                                 "/reset-password",
-                                "/css/**", "/js/**", "/images/**",
+                                "/terms", "/privacy",
+                                "/css/**", "/js/**", "/images/**", "/audio/**",
                                 "/uploads/**", "/h2-console/**").permitAll()
-                        // Android REST API：登录/注册/忘记密码/重置密码公开，其余需认证
+                        // Android REST API：登录/注册/刷新Token/忘记密码/重置密码公开
                         .requestMatchers("/api/auth/login", "/api/auth/register",
+                                "/api/auth/refresh",
                                 "/api/auth/forgot-password",
                                 "/api/auth/verify-reset-code",
                                 "/api/auth/reset-password",
@@ -64,7 +76,7 @@ public class SecurityConfig {
                                 ).authenticated()
                         .anyRequest().authenticated()
                 )
-                // API 请求未认证时返回 JSON 401，而非重定向到 HTML 登录页
+                // API 请求未认证时返回 JSON 401
                 .exceptionHandling(exceptions -> exceptions
                         .defaultAuthenticationEntryPointFor(
                                 (request, response, authException) -> {
@@ -85,7 +97,9 @@ public class SecurityConfig {
                 .logout(logout -> logout
                         .logoutSuccessUrl("/login?logout")
                         .permitAll()
-                );
+                )
+                // 注册 JWT 认证过滤器，在用户名密码认证之前执行
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }

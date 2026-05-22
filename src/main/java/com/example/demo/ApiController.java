@@ -73,7 +73,7 @@ public class ApiController {
     // AUTH
     // ============================================================
 
-    /** POST /api/auth/login — 用户名密码登录，返回用户信息 JSON */
+    /** POST /api/auth/login — 用户名密码登录，返回用户信息 + JWT Token 对 */
     @PostMapping("/auth/login")
     public ResponseEntity<Map<String, Object>> login(
             @RequestBody Map<String, String> body,
@@ -84,16 +84,51 @@ public class ApiController {
             Authentication auth = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(username, password));
             SecurityContextHolder.getContext().setAuthentication(auth);
-            // 将 Authentication 写入 Session，使 Spring Security 后续请求可识别
+            // 兼容 Web 端 Session 认证
             HttpSession session = request.getSession(true);
             session.setAttribute("SPRING_SECURITY_CONTEXT", SecurityContextHolder.getContext());
 
             User user = userService.findByUsername(username)
                     .orElseThrow(() -> new RuntimeException("用户不存在"));
-            return ResponseEntity.ok(buildUserMap(user));
+
+            // 生成双 Token
+            String accessToken = JwtUtil.generateAccessToken(username);
+            String refreshToken = JwtUtil.generateRefreshToken(username);
+
+            Map<String, Object> result = buildUserMap(user);
+            result.put("accessToken", accessToken);
+            result.put("refreshToken", refreshToken);
+            return ResponseEntity.ok(result);
         } catch (AuthenticationException e) {
             return ResponseEntity.status(401).body(Map.of("error", "用户名或密码错误"));
         }
+    }
+
+    /** POST /api/auth/refresh — 使用 Refresh Token 换取新的 Token 对（无感刷新） */
+    @PostMapping("/auth/refresh")
+    public ResponseEntity<Map<String, Object>> refresh(@RequestBody Map<String, String> body) {
+        String refreshToken = body.get("refreshToken");
+        if (refreshToken == null || refreshToken.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of("error", "缺少 refreshToken"));
+        }
+        if (!JwtUtil.isTokenValid(refreshToken)) {
+            return ResponseEntity.status(401).body(Map.of("error", "refreshToken 无效或已过期"));
+        }
+        if (JwtUtil.isTokenExpired(refreshToken)) {
+            return ResponseEntity.status(401).body(Map.of("error", "refreshToken 已过期，请重新登录"));
+        }
+        String username = JwtUtil.extractUsername(refreshToken);
+        // 验证用户仍有效
+        if (userService.findByUsername(username).isEmpty()) {
+            return ResponseEntity.status(401).body(Map.of("error", "用户不存在"));
+        }
+        // 生成新的 Token 对
+        String newAccessToken = JwtUtil.generateAccessToken(username);
+        String newRefreshToken = JwtUtil.generateRefreshToken(username);
+        return ResponseEntity.ok(Map.of(
+                "accessToken", newAccessToken,
+                "refreshToken", newRefreshToken
+        ));
     }
 
     /** POST /api/auth/register — 注册新用户 */
@@ -238,7 +273,7 @@ public class ApiController {
         }
     }
 
-    /** POST /api/auth/logout — 登出 */
+    /** POST /api/auth/logout — 登出（清除 Session 即可，Token 由客户端丢弃） */
     @PostMapping("/auth/logout")
     public ResponseEntity<Map<String, Object>> logout(HttpServletRequest request) {
         SecurityContextHolder.clearContext();
@@ -827,6 +862,22 @@ public class ApiController {
         }
         Comment comment = postService.addComment(id, getPrincipalUserId(principal), content);
         return ResponseEntity.ok(Map.of("success", true, "commentId", comment.getId()));
+    }
+
+    /** POST /api/posts/{id}/comment/delete — 删除评论（仅评论作者可删除） */
+    @PostMapping("/posts/{id}/comment/delete")
+    public ResponseEntity<Map<String, Object>> deleteComment(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> body,
+            Principal principal) {
+        if (principal == null) return ResponseEntity.status(401).body(Map.of("error", "未登录"));
+        Long commentId = ((Number) body.get("commentId")).longValue();
+        try {
+            postService.deleteComment(commentId, getPrincipalUserId(principal));
+            return ResponseEntity.ok(Map.of("success", true));
+        } catch (RuntimeException e) {
+            return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+        }
     }
 
     /** POST /api/posts/{id}/delete — 删除帖子 */

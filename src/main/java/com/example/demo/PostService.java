@@ -46,12 +46,17 @@ public class PostService {
         return postRepository.findById(id);
     }
 
+    @Transactional
     public void deletePost(Long postId, Long userId) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new RuntimeException("帖子不存在"));
         if (!post.getAuthor().getId().equals(userId)) {
             throw new RuntimeException("无权删除他人帖子");
         }
+        // 先清理关联数据，避免外键约束
+        postLikeRepository.deleteAllByPostId(postId);
+        postFavoriteRepository.deleteAllByPostId(postId);
+        commentRepository.deleteAllByPostId(postId);
         postRepository.delete(post);
     }
 

@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隐私政策 - 美食打卡</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#F97316', 'primary-dark': '#EA580C', 'primary-light': '#FDBA74',
+                    },
+                    fontFamily: { sans: ['Noto Sans SC', 'sans-serif'] }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="min-h-screen bg-bg-warm">
+    <nav class="nav-glass sticky top-0 z-50">
+        <div class="max-w-3xl mx-auto px-4">
+            <div class="flex justify-between items-center h-14">
+                <a class="flex items-center gap-2 text-xl font-bold text-primary-dark" href="/">
+                    <span>美食打卡</span>
+                </a>
+                <a href="/register" class="text-sm text-primary hover:text-primary-dark transition-colors">&larr; 返回注册</a>
+            </div>
+        </div>
+    </nav>
+    <div class="max-w-3xl mx-auto px-4 py-8">
+        <div class="card-premium p-8 dish-card">
+            <h1 class="text-2xl font-bold text-stone-900 mb-6">隐私政策</h1>
+            <div class="text-sm text-stone-600 leading-relaxed space-y-4">
+                <p>「美食打卡」平台（以下简称"本平台"）重视您的隐私。本政策说明了我们如何收集、使用和保护您的个人信息。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">1. 信息收集</h2>
+                <p>我们收集的信息包括：您在注册时提供的用户名、邮箱地址；您发布的内容（帖子、评论、图片等）；您使用位置服务时的位置信息。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">2. 信息使用</h2>
+                <p>我们收集的信息用于：提供和维护平台服务；改善用户体验；推送相关内容和活动通知；处理您的反馈和请求。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">3. 信息共享</h2>
+                <p>我们不会将您的个人信息出售给第三方。在以下情况下，我们可能会共享您的信息：获得您的明确同意；法律法规要求；保护平台合法权益。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">4. 信息存储与保护</h2>
+                <p>我们采取合理的技术和管理措施保护您的信息安全，防止未经授权的访问、使用或泄露。</p>
+                <p>您的信息存储在我们的服务器上，我们将在实现服务目的所必需的期限内保留您的信息。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">5. 您的权利</h2>
+                <p>您有权访问、修改或删除您的个人信息。您可以通过账号设置或联系我们来行使这些权利。</p>
+                <p>您可以选择不提供某些信息，但这可能影响您使用部分服务功能。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">6. Cookie 及类似技术</h2>
+                <p>我们使用必要的Cookie来维护会话状态，确保服务正常运行。我们不使用第三方追踪Cookie。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">7. 政策更新</h2>
+                <p>我们可能会更新本隐私政策。重大变更将通过平台公告或邮件通知您。继续使用本平台即表示您同意更新后的政策。</p>
+
+                <h2 class="text-lg font-semibold text-stone-800 mt-6">8. 联系方式</h2>
+                <p>如对本隐私政策有任何疑问，请通过平台内反馈渠道联系我们。</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
