@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
@@ -10,7 +10,7 @@
     <script defer src="/js/app.js"></script>
     <script>
         tailwind.config = {
-            theme: { extend: { colors: { primary: '#ea580c', accent: '#f97316', muted: '#f5f5f5', 'muted-foreground': '#737373', border: '#e5e5e5' }}}
+            theme: { extend: { colors: { primary: '#5B21B6', accent: '#7C3AED', muted: '#f5f5f5', 'muted-foreground': '#737373', border: '#e5e5e5' }}}
         }
     </script>
     <style>
@@ -195,7 +195,7 @@
                                         &nbsp;|&nbsp;
                                         申请时间：<span th:text="${#temporals.format(shop.updatedAt, 'yyyy-MM-dd HH:mm')}">时间</span>
                                     </p>
-                                    <p class="text-xs text-amber-600 mt-1">&#9888; 审核通过后将删除所有菜品，店铺标记为闭店</p>
+                                    <p class="text-xs text-purple-600 mt-1">&#9888; 审核通过后将删除所有菜品，店铺标记为闭店</p>
                                 </div>
                                 <div class="flex gap-2 ml-4 shrink-0">
                                     <form th:action="@{/admin/shops/{id}/approve-withdrawal(id=${shop.id})}" method="post"
@@ -270,7 +270,7 @@
                 <div class="divide-y divide-border">
                     <div th:each="user : ${users}" class="flex items-center justify-between px-4 py-3 hover:bg-gray-50">
                         <div class="flex items-center gap-2 min-w-0">
-                            <div class="w-7 h-7 bg-gradient-to-br from-orange-400 to-red-400 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
+                            <div class="w-7 h-7 bg-gradient-to-br from-violet-400 to-red-400 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0"
                                  th:text="${#strings.substring(user.username, 0, 1)}">U</div>
                             <div class="min-w-0">
                                 <span class="text-sm font-medium text-gray-800 block truncate" th:text="${user.name != null ? user.name : user.username}">用户名</span>

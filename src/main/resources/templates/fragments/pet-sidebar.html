@@ -1,0 +1,131 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<!-- 宠物陪伴 sidebar 碎片 — 固定在页面右侧，异步加载宠物数据 -->
+<th:block th:fragment="pet-sidebar">
+    <th:block th:if="${#authentication.principal != 'anonymousUser'}">
+        <!-- 固定定位的宠物容器 -->
+        <div id="pet-companion" class="hidden fixed bottom-6 right-6 z-40 flex flex-col items-center gap-1.5" style="display:none">
+            <!-- 气泡 -->
+            <div id="pet-bubble" class="bg-white/90 backdrop-blur px-3 py-2 rounded-2xl shadow-lg text-xs text-stone-600 max-w-[160px] text-center leading-relaxed opacity-0 transition-opacity duration-300" style="opacity:0">
+                <span id="pet-bubble-text">🐾 嗨！一起去打卡吧~</span>
+            </div>
+            <!-- 小型气泡三角 -->
+            <div id="pet-bubble-arrow" class="w-0 h-0 border-l-[6px] border-r-[6px] border-t-[6px] border-l-transparent border-r-transparent border-t-white/90 opacity-0 transition-opacity duration-300" style="opacity:0"></div>
+            <!-- 宠物头像 -->
+            <a href="/pet" id="pet-avatar-link" class="relative block group" title="去看看我的宠物">
+                <!-- 像素宠物身体 -->
+                <div class="relative w-[72px] h-[72px] rounded-full bg-gradient-to-b from-violet-200 via-violet-100 to-indigo-50 flex items-center justify-center shadow-lg ring-2 ring-violet-300/50 hover:ring-violet-400 hover:scale-110 transition-all duration-300 cursor-pointer group">
+                    <!-- 宠物emoji -->
+                    <span id="pet-emoji-display" class="text-4xl transition-transform group-hover:scale-110 duration-300">🐱</span>
+                    <!-- 等级徽章 -->
+                    <span id="pet-level-badge" class="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-violet-400 to-indigo-500 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow">1</span>
+                </div>
+                <!-- 名称 + 积分 -->
+                <div class="text-center mt-1">
+                    <p id="pet-name-display" class="text-[11px] font-semibold text-stone-600 leading-tight">小可爱</p>
+                    <p class="text-[10px] text-indigo-500 font-medium">🪙 <span id="pet-points-display" th:text="${petPoints}">0</span></p>
+                </div>
+            </a>
+            <!-- 点击动画波纹 -->
+            <style>
+                @keyframes petJump {
+                    0%,100%{transform:translateY(0)}
+                    30%{transform:translateY(-6px)}
+                    50%{transform:translateY(0)}
+                    70%{transform:translateY(-3px)}
+                }
+                .pet-jump { animation: petJump 0.6s ease }
+                #pet-companion { animation: petFloat 3s ease-in-out infinite }
+                @keyframes petFloat {
+                    0%,100%{transform:translateY(0)}
+                    50%{transform:translateY(-4px)}
+                }
+            </style>
+        </div>
+
+        <script>
+        (function() {
+            var container = document.getElementById('pet-companion');
+            if (!container) return;
+
+            var tips = [
+                "🐾 打卡越远，积分越多哦~", "🍖 买点食物喂我吧！",
+                "👑 帮我升级，我会变强！", "✨ 积分可以在商店买东西~",
+                "🎒 看看背包里有什么", "💪 今天也要元气满满！",
+                "🏃 走得越远，赚得越多！", "👗 给我换件新衣服吧~",
+                "🌟 升级后会有新特效！", "🎯 目标：满级50级！"
+            ];
+            var tipIdx = 0;
+            var petData = null;
+            var lastFetch = 0;
+            var CACHE_MS = 30000; // 30秒缓存
+
+            // 加载宠物数据
+            function loadPet() {
+                var now = Date.now();
+                if (petData && now - lastFetch < CACHE_MS) {
+                    renderPet(petData);
+                    return;
+                }
+                fetch('/api/pet/info', { credentials: 'include' })
+                    .then(function(r) { return r.json(); })
+                    .then(function(d) {
+                        if (d.success) { petData = d; lastFetch = now; renderPet(d); }
+                    })
+                    .catch(function(){ container.style.display = 'none'; });
+            }
+
+            function renderPet(d) {
+                container.style.display = 'flex';
+                container.classList.add('animate-fade-in-up');
+
+                var pet = d.pet;
+                document.getElementById('pet-emoji-display').textContent = pet.petEmoji || '🐱';
+                document.getElementById('pet-name-display').textContent = pet.nickname || '小可爱';
+                document.getElementById('pet-level-badge').textContent = pet.level || 1;
+                document.getElementById('pet-points-display').textContent = d.points || 0;
+
+                // 显示气泡
+                showBubble();
+            }
+
+            function showBubble() {
+                var bubble = document.getElementById('pet-bubble');
+                var arrow = document.getElementById('pet-bubble-arrow');
+                var text = document.getElementById('pet-bubble-text');
+                text.textContent = tips[tipIdx % tips.length];
+                tipIdx++;
+                bubble.style.opacity = '1';
+                arrow.style.opacity = '1';
+                setTimeout(function() {
+                    bubble.style.opacity = '0';
+                    arrow.style.opacity = '0';
+                }, 4000);
+            }
+
+            // 点击宠物跳一下
+            var avatarLink = document.getElementById('pet-avatar-link');
+            if (avatarLink) {
+                var emoji = document.getElementById('pet-emoji-display');
+                avatarLink.addEventListener('click', function() {
+                    if (emoji) { emoji.classList.remove('pet-jump'); void emoji.offsetWidth; emoji.classList.add('pet-jump'); }
+                    showBubble();
+                });
+            }
+
+            // 初始加载 & 定期刷新气泡
+            loadPet();
+            setInterval(function() {
+                if (container.style.display !== 'none') showBubble();
+            }, 15000);
+            // 页面切换回来时刷新
+            document.addEventListener('visibilitychange', function() {
+                if (!document.hidden) loadPet();
+            });
+        })();
+        </script>
+    </th:block>
+</th:block>
+</body>
+</html>

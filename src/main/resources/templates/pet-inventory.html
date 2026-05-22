@@ -1,0 +1,51 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的背包 - 美食打卡</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="/js/app.js"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#7C3AED','primary-dark':'#5B21B6','primary-light':'#C4B5FD',accent:'#0EA5E9','bg-warm':'#F8F7FF'},fontFamily:{sans:['Noto Sans SC','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-bg-warm page-enter">
+
+<nav class="nav-glass sticky top-0 z-50">
+    <div class="max-w-3xl mx-auto px-4">
+        <div class="flex justify-between items-center h-14">
+            <a href="/pet" class="text-sm text-stone-500 hover:text-primary transition-colors">&larr; 我的宠物</a>
+            <span class="pet-points-badge">🪙 <span th:text="${points}">0</span></span>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-lg mx-auto px-4 py-6">
+    <div th:if="${success}" class="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 animate-fade-in-up" th:text="${success}"></div>
+    <div th:if="${error}" class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 animate-fade-in-up" th:text="${error}"></div>
+
+    <h2 class="text-lg font-bold text-stone-800 mb-4 animate-fade-in-up">🎒 我的背包</h2>
+
+    <div th:each="inv, iter : ${inventory}" class="shop-item mb-3 animate-fade-in-up" th:classappend="${'stagger-'+iter.index}">
+        <div class="shop-item-icon" th:classappend="${inv.itemType == 'FOOD' ? 'food' : (inv.itemType == 'DECORATION' ? 'deco' : 'special')}">
+            <span th:text="${inv.itemType == 'FOOD' ? '🍖' : (inv.itemType == 'DECORATION' ? '👗' : '✨')}">🎁</span>
+        </div>
+        <div class="shop-item-info">
+            <div class="shop-item-name" th:text="${inv.itemName}">道具名</div>
+            <div class="shop-item-meta">
+                <span class="shop-item-tag" th:classappend="${inv.itemType == 'FOOD' ? 'food' : (inv.itemType == 'DECORATION' ? 'deco' : 'special')}" th:text="${inv.itemType == 'FOOD' ? '食物' : (inv.itemType == 'DECORATION' ? '装扮' : '特殊')}">类型</span>
+                <span class="text-[10px] text-stone-400">x<span th:text="${inv.inventory.quantity}">1</span></span>
+            </div>
+        </div>
+        <form method="post" th:action="@{/pet/use/{id}(id=${inv.inventory.id})}" class="shop-item-action">
+            <button type="submit" onclick="return confirm('确定使用【[[${inv.itemName}]]】吗？')">使用</button>
+        </form>
+    </div>
+
+    <div th:if="${#lists.isEmpty(inventory)}" class="text-center py-10 text-stone-400 animate-fade-in">
+        <p class="text-4xl mb-3">🎒</p>
+        <p>背包空空如也~ 去<a href="/pet/shop" class="text-primary hover:underline font-medium">商店</a>看看吧！</p>
+    </div>
+</div>
+</body>
+</html>

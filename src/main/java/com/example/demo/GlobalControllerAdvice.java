@@ -21,6 +21,8 @@ public class GlobalControllerAdvice {
             model.addAttribute("username", principal.getName());
             userService.findByUsername(principal.getName()).ifPresent(user -> {
                 model.addAttribute("avatarUrl", user.getAvatarUrl());
+                model.addAttribute("userId", user.getId());
+                model.addAttribute("petPoints", user.getPetPoints());
             });
         }
     }

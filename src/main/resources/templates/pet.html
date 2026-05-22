@@ -1,0 +1,138 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的宠物 - 美食打卡</title>
+    <link rel="stylesheet" href="/css/common.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="/js/app.js"></script>
+    <script>tailwind.config={theme:{extend:{colors:{primary:'#7C3AED','primary-dark':'#5B21B6','primary-light':'#C4B5FD',accent:'#0EA5E9','accent-light':'#BAE6FD','bg-warm':'#F8F7FF'},fontFamily:{sans:['Noto Sans SC','sans-serif']}}}}</script>
+</head>
+<body class="min-h-screen bg-bg-warm page-enter">
+
+<nav class="nav-glass sticky top-0 z-50">
+    <div class="max-w-3xl mx-auto px-4">
+        <div class="flex justify-between items-center h-14">
+            <a class="flex items-center gap-2 text-xl font-bold text-primary-dark" href="/">
+                <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none"><path d="M12 2C8.5 2 5 4 5 8c0 2.5 1.5 4 3 5.5V16a1 1 0 001 1h6a1 1 0 001-1v-2.5c1.5-1.5 3-3 3-5.5 0-4-3.5-6-7-6z" fill="url(#nav-grad2)" opacity="0.9"/><path d="M9 18h6M9 20h4M10 22h2" stroke="#5B21B6" stroke-width="1.5" stroke-linecap="round"/><defs><linearGradient id="nav-grad2" x1="5" y1="2" x2="19" y2="16"><stop stop-color="#C4B5FD"/><stop offset="1" stop-color="#7C3AED"/></linearGradient></defs></svg>
+                <span>美食打卡</span>
+            </a>
+            <div class="flex items-center gap-3">
+                <a href="/pet/shop" class="text-sm text-stone-500 hover:text-primary transition-colors">🛒 商店</a>
+                <a href="/pet/inventory" class="text-sm text-stone-500 hover:text-primary transition-colors">🎒 背包</a>
+                <a href="/profile" class="text-sm text-stone-400 hover:text-primary transition-colors">我的</a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-lg mx-auto px-4 py-6">
+    <div th:if="${success}" class="mb-4 px-4 py-3 bg-green-50 border border-green-200 rounded-xl text-sm text-green-700 animate-fade-in-up" th:text="${success}"></div>
+    <div th:if="${error}" class="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-xl text-sm text-red-700 animate-fade-in-up" th:text="${error}"></div>
+
+    <!-- 宠物卡 -->
+    <div class="pet-card text-center p-6 mb-5 animate-fade-in-up">
+        <span class="pet-points-badge mb-3">🪙 <span th:text="${points}">0</span> 积分</span>
+
+        <div class="pet-avatar-ring inline-block mb-3 pet-glow">
+            <div class="w-28 h-28 mx-auto rounded-full bg-gradient-to-b from-violet-100 via-indigo-50 to-indigo-50 flex items-center justify-center">
+                <span class="text-6xl pet-float" th:text="${pet.petEmoji}">🐼</span>
+            </div>
+        </div>
+
+        <h2 class="text-xl font-black text-stone-800" th:text="${pet.nickname}">小可爱</h2>
+        <p class="text-xs text-stone-400 mt-1" th:text="'Lv.' + ${pet.level} + ' · ' + ${pet.petTypeName}">Lv.1 · 熊猫</p>
+
+        <!-- 经验条 -->
+        <div class="mt-4 px-4">
+            <div class="flex justify-between text-[10px] text-stone-400 mb-1.5">
+                <span th:text="'经验 ' + ${pet.experience} + '/' + ${pet.expToNextLevel}">0/100</span>
+                <span th:text="${pet.level < 50 ? '距下一级 ' + (pet.expToNextLevel - pet.experience) : '满级'}">100</span>
+            </div>
+            <div class="w-full bg-stone-100 rounded-full h-2.5 overflow-hidden">
+                <div class="bg-gradient-to-r from-violet-400 to-violet-400 h-full rounded-full transition-all duration-700" th:style="${'width:' + (pet.expToNextLevel > 0 ? (pet.experience * 100 / pet.expToNextLevel) : 100) + '%'}" style="width:0%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 改名 -->
+    <div class="pet-card p-4 mb-5 animate-fade-in-up stagger-1">
+        <form method="post" th:action="@{/pet/rename}" class="flex gap-2">
+            <input type="text" name="nickname" maxlength="10" placeholder="给宠物起个名字..." class="input-warm text-sm flex-1 !rounded-full" th:value="${pet.nickname}"/>
+            <button type="submit" class="btn-primary px-5 py-2 text-sm !rounded-full">改名</button>
+        </form>
+        <p id="rename-cooldown" class="text-[10px] text-stone-400 text-center mt-2" style="display:none"></p>
+    </div>
+
+    <!-- 换形象 -->
+    <div class="pet-card p-5 mb-5 animate-fade-in-up stagger-2">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="font-semibold text-stone-700 text-sm">🔄 更换形象
+                <span th:if="${pet.lastTypeChangeTime == null}" class="text-[10px] text-green-600 bg-green-50 px-2 py-0.5 rounded-full ml-1">首次免费</span>
+            </h3>
+            <span id="type-change-info" th:unless="${pet.lastTypeChangeTime == null}" class="text-xs text-purple-600 font-medium"></span>
+            <span id="type-cooldown" class="text-xs text-red-400" style="display:none"></span>
+        </div>
+
+        <div class="type-grid">
+            <th:block th:each="t : ${T(com.example.demo.PetService).PET_TYPES}">
+                <!-- 构建类型信息：emoji + 中文名 -->
+                <th:block th:with="emojis=${{'panda':'🐼','cat':'🐱','dog':'🐶','lion':'🦁','tiger':'🐯'}},
+                                   names=${{'panda':'熊猫','cat':'猫咪','dog':'小狗','lion':'狮子','tiger':'老虎'}},
+                                   typeEmoji=${emojis[t]}, typeName=${names[t]}">
+                    <form method="post" th:action="${pet.lastTypeChangeTime == null} ? @{/pet/select-type} : @{/pet/change-type}"
+                          class="type-btn" th:classappend="${t == pet.petType} ? 'active'"
+                          th:onsubmit="'return confirmTypeChange(this,event,\'' + ${t} + '\')'">
+                        <input type="hidden" name="petType" th:value="${t}"/>
+                        <span class="emoji" th:text="${typeEmoji}">🐼</span>
+                        <span th:text="${typeName}">类型</span>
+                    </form>
+                </th:block>
+            </th:block>
+        </div>
+    </div>
+
+    <!-- 快捷入口 -->
+    <div class="flex gap-3 mb-6 animate-fade-in-up stagger-3">
+        <a href="/pet/shop" class="flex-1 btn-primary text-center py-3 rounded-2xl font-semibold text-sm">🛒 积分商店</a>
+        <a href="/pet/inventory" class="flex-1 border border-stone-200 bg-white text-stone-700 text-center py-3 rounded-2xl font-semibold text-sm hover:bg-stone-50 transition-colors">🎒 我的背包</a>
+    </div>
+
+    <div class="text-center text-[11px] text-stone-400 pb-4">打卡越远积分越多 · 距离×10=积分（5~100） · 默认500积分</div>
+</div>
+
+<script>
+/* [[${pet}]] */ var petData = null;
+(function(){
+    var pet = /*[[${pet}]]*/ null;
+    if(!pet){petData={petType:'panda',lastRenameTime:null,lastTypeChangeTime:null};return;}
+    petData = pet;
+    // 装扮解析
+    try{var j=pet.appearanceJson;if(j){var a=typeof j==='string'?JSON.parse(j):j;
+        var m={hat:'帽子',outfit:'衣服',accessory:'配饰',effect:'特效'};
+        Object.keys(m).forEach(function(k){var e=document.getElementById(k+'-status');if(e&&a[k]&&a[k]!=='none'){e.textContent=a[k];e.className='float-right text-purple-600 font-medium'}});
+    }}catch(e){}
+})();
+
+// 冷却
+(function(){
+    var lastR=petData.lastRenameTime,lastT=petData.lastTypeChangeTime;
+    function cd(ts,d){if(!ts)return-1;var t=new Date(ts.replace('T',' '));var n=new Date();var r=d-(n-t)/864e5;return r>0?Math.ceil(r):-1}
+    var rr=cd(lastR,15);if(rr>0){var e=document.getElementById('rename-cooldown');if(e){e.style.display='block';e.textContent='⏳ 改名冷却 '+rr+' 天'}}
+    var tr=cd(lastT,30);
+    if(tr>0){var c=document.getElementById('type-cooldown');if(c){c.style.display='block';c.textContent='⏳ 冷却 '+tr+' 天'}}
+    else{var i=document.getElementById('type-change-info');if(i&&lastT)i.textContent='🪙 消耗 160 积分'}
+})();
+
+// 形象确认
+var tn={panda:'熊猫',cat:'猫咪',dog:'小狗',lion:'狮子',tiger:'老虎'};
+window.confirmTypeChange=function(f,e,nt){
+    var ct=petData.petType||'panda';
+    if(nt===ct){e.preventDefault();var b=f.querySelector('.type-btn');if(b){b.style.animation='none';b.offsetHeight;b.style.animation='petBounce .5s ease'}var c=document.getElementById('type-cooldown');if(c){c.style.display='block';c.textContent='当前已是「'+tn[nt]+'」';c.style.color='#6366F1';setTimeout(function(){c.style.display='none'},2000)}return false}
+    if(!petData.lastTypeChangeTime)return confirm('选择「'+tn[nt]+'」作为宠物形象吗？首次免费~');
+    return confirm('更换为「'+tn[nt]+'」将消耗 160 积分，确定吗？');
+};
+</script>
+</body>
+</html>

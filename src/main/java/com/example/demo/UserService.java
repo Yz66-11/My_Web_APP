@@ -18,6 +18,9 @@ public class UserService {
     private final PostFavoriteRepository postFavoriteRepository;
     private final CommentRepository commentRepository;
     private final GalleryUnlockRepository galleryUnlockRepository;
+    private final UserPetRepository userPetRepository;
+    private final UserPetInventoryRepository userPetInventoryRepository;
+    private final PetService petService;
 
     public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                        ShopRepository shopRepository, DishRepository dishRepository,
@@ -25,7 +28,10 @@ public class UserService {
                        PostLikeRepository postLikeRepository,
                        PostFavoriteRepository postFavoriteRepository,
                        CommentRepository commentRepository,
-                       GalleryUnlockRepository galleryUnlockRepository) {
+                       GalleryUnlockRepository galleryUnlockRepository,
+                       UserPetRepository userPetRepository,
+                       UserPetInventoryRepository userPetInventoryRepository,
+                       PetService petService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.shopRepository = shopRepository;
@@ -35,6 +41,9 @@ public class UserService {
         this.postFavoriteRepository = postFavoriteRepository;
         this.commentRepository = commentRepository;
         this.galleryUnlockRepository = galleryUnlockRepository;
+        this.userPetRepository = userPetRepository;
+        this.userPetInventoryRepository = userPetInventoryRepository;
+        this.petService = petService;
     }
 
     public List<User> getAllUsers() {
@@ -64,7 +73,14 @@ public class UserService {
     public User registerUser(User user) {
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         user.setRole(User.Role.USER);
-        return userRepository.save(user);
+        User saved = userRepository.save(user);
+        // 自动授予宠物
+        try {
+            petService.grantPet(saved.getId());
+        } catch (Exception ignored) {
+            // 宠物授予失败不影响注册流程
+        }
+        return saved;
     }
 
     public User createAdminUser(User user) {
@@ -118,6 +134,10 @@ public class UserService {
 
     @Transactional
     public void deleteUser(Long userId) {
+        // 0. 删除宠物相关数据
+        userPetInventoryRepository.deleteByUserId(userId);
+        userPetRepository.findByUserId(userId).ifPresent(userPetRepository::delete);
+
         // 1. 删除图鉴解锁记录
         galleryUnlockRepository.deleteByUserId(userId);
 

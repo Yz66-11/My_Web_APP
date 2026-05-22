@@ -40,6 +40,7 @@ public class ApiController {
     private final AuthenticationManager authenticationManager;
     private final OrderService orderService;
     private final EmailService emailService;
+    private final PetService petService;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -56,7 +57,8 @@ public class ApiController {
                          ShopVisitRepository shopVisitRepository,
                          AuthenticationManager authenticationManager,
                          OrderService orderService,
-                         EmailService emailService) {
+                         EmailService emailService,
+                         PetService petService) {
         this.userService = userService;
         this.shopService = shopService;
         this.galleryService = galleryService;
@@ -67,6 +69,7 @@ public class ApiController {
         this.authenticationManager = authenticationManager;
         this.orderService = orderService;
         this.emailService = emailService;
+        this.petService = petService;
     }
 
     // ============================================================
@@ -202,6 +205,7 @@ public class ApiController {
         result.put("visitedShopCount", shopVisitRepository.countByUserId(userId));
         result.put("favCount", userService.countUserFavorites(userId));
         result.put("postCount", postService.countByUser(userId));
+        result.put("petPoints", user.getPetPoints());
         return ResponseEntity.ok(result);
     }
 
@@ -692,7 +696,7 @@ public class ApiController {
         return ResponseEntity.ok(out);
     }
 
-    /** POST /api/gallery/unlock — 解锁菜品（含打卡图片 base64） */
+    /** POST /api/gallery/unlock — 解锁菜品（含打卡图片 base64，可选经纬度用于积分） */
     @PostMapping("/gallery/unlock")
     public ResponseEntity<Map<String, Object>> unlockDish(
             @RequestBody Map<String, Object> body, Principal principal) {
@@ -711,8 +715,28 @@ public class ApiController {
             }
         }
         boolean newlyUnlocked = galleryService.unlockDish(userId, dishId, imageUrl, comment);
+
+        // 打卡积分奖励
+        int pointsAwarded = 0;
+        if (newlyUnlocked) {
+            Object latObj = body.get("latitude");
+            Object lngObj = body.get("longitude");
+            if (latObj instanceof Number && lngObj instanceof Number) {
+                pointsAwarded = petService.awardCheckinPoints(userId, dishId,
+                        ((Number) latObj).doubleValue(), ((Number) lngObj).doubleValue());
+            }
+        }
+
         String msg = newlyUnlocked ? "解锁成功！图鉴已更新" : "该菜品已经解锁过了";
-        return ResponseEntity.ok(Map.of("success", true, "newlyUnlocked", newlyUnlocked, "message", msg));
+        if (pointsAwarded > 0) {
+            msg += "，+" + pointsAwarded + " 积分";
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("success", true);
+        result.put("newlyUnlocked", newlyUnlocked);
+        result.put("message", msg);
+        result.put("pointsAwarded", pointsAwarded);
+        return ResponseEntity.ok(result);
     }
 
     // ============================================================

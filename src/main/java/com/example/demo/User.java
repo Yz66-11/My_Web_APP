@@ -52,6 +52,10 @@ public class User {
     @Column(length = 50)
     private String bio;
 
+    /** 宠物积分（货币） */
+    @Column(nullable = false)
+    private int petPoints = 500;
+
     public User() {}
 
     public User(String username, String email, String password) {
@@ -102,6 +106,9 @@ public class User {
 
     public String getBio() { return bio; }
     public void setBio(String bio) { this.bio = bio; }
+
+    public int getPetPoints() { return petPoints; }
+    public void setPetPoints(int petPoints) { this.petPoints = petPoints; }
 
     public String getDisplayGender() {
         if (gender == null || gender == 0) return "未设置";

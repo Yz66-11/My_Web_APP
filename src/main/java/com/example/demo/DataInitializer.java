@@ -11,11 +11,14 @@ public class DataInitializer implements CommandLineRunner {
     private final UserService userService;
     private final ShopService shopService;
     private final PostService postService;
+    private final PetShopItemRepository petShopItemRepository;
 
-    public DataInitializer(UserService userService, ShopService shopService, PostService postService) {
+    public DataInitializer(UserService userService, ShopService shopService,
+                           PostService postService, PetShopItemRepository petShopItemRepository) {
         this.userService = userService;
         this.shopService = shopService;
         this.postService = postService;
+        this.petShopItemRepository = petShopItemRepository;
     }
 
     @Override
@@ -47,6 +50,9 @@ public class DataInitializer implements CommandLineRunner {
 
         // 创建示例帖子
         createSamplePosts();
+
+        // 初始化宠物商店道具
+        initPetShopItems();
     }
 
     private void createSampleShops() {
@@ -170,5 +176,67 @@ public class DataInitializer implements CommandLineRunner {
                 "一个人也要好好吃饭 | 快手晚餐分享",
                 "今天下班后去老王拉面馆吃了一碗炸酱面，作为北方人真的是从小吃到大的味道。\n\n手擀的面条劲道有嚼劲，配上浓郁的肉酱和清爽的黄瓜丝，简简单单却很满足。\n\n一个人吃饭也要认真对待每一餐呀！你们下班后一般都吃什么呢？",
                 null, "北京市海淀区");
+    }
+
+    // ==================== 宠物商店道具初始化 ====================
+
+    private void initPetShopItems() {
+        if (petShopItemRepository.count() > 0) return;
+
+        // 食物类：增加经验
+        addShopItem("宠物饼干", 10, PetShopItem.ItemType.FOOD, "exp", 30,
+                "普通宠物饼干，+30经验", 1);
+        addShopItem("美味鱼干", 25, PetShopItem.ItemType.FOOD, "exp", 80,
+                "风干小鱼，+80经验", 2);
+        addShopItem("豪华套餐", 60, PetShopItem.ItemType.FOOD, "exp", 200,
+                "精心搭配的营养大餐，+200经验", 3);
+        addShopItem("神秘仙果", 150, PetShopItem.ItemType.FOOD, "exp", 500,
+                "传说中吃了能飞速成长的果实，+500经验", 4);
+
+        // 装扮类：改变外观
+        addShopItem("小黄帽", 50, PetShopItem.ItemType.DECORATION, "hat",
+                "一顶可爱的黄色小帽子", 10);
+        addShopItem("魔法斗篷", 80, PetShopItem.ItemType.DECORATION, "outfit",
+                "闪亮的魔法斗篷，穿上超酷", 11);
+        addShopItem("蝴蝶结", 40, PetShopItem.ItemType.DECORATION, "accessory",
+                "粉色的蝴蝶结，可爱加倍", 12);
+        addShopItem("皇冠", 200, PetShopItem.ItemType.DECORATION, "hat",
+                "金光闪闪的皇冠，宠物之王", 13);
+        addShopItem("圣诞毛衣", 100, PetShopItem.ItemType.DECORATION, "outfit",
+                "温暖的圣诞主题毛衣", 14);
+
+        // 特殊道具
+        addShopItem("彩虹特效", 300, PetShopItem.ItemType.SPECIAL, "effect",
+                "让宠物全身散发彩虹光芒", 20);
+
+        System.out.println("宠物商店默认道具已创建 (共10件)");
+    }
+
+    private void addShopItem(String name, int price, PetShopItem.ItemType type,
+                             String effectKey, String description, int sortOrder) {
+        PetShopItem item = new PetShopItem();
+        item.setName(name);
+        item.setPrice(price);
+        item.setType(type);
+        item.setEffectKey(effectKey);
+        item.setEffectValue(type == PetShopItem.ItemType.FOOD ? Integer.parseInt(effectKey) : 0);
+        item.setDescription(description);
+        item.setSortOrder(sortOrder);
+        item.setActive(true);
+        petShopItemRepository.save(item);
+    }
+
+    private void addShopItem(String name, int price, PetShopItem.ItemType type,
+                             String effectKey, int effectValue, String description, int sortOrder) {
+        PetShopItem item = new PetShopItem();
+        item.setName(name);
+        item.setPrice(price);
+        item.setType(type);
+        item.setEffectKey(effectKey);
+        item.setEffectValue(effectValue);
+        item.setDescription(description);
+        item.setSortOrder(sortOrder);
+        item.setActive(true);
+        petShopItemRepository.save(item);
     }
 }

@@ -34,6 +34,7 @@ public class AuthController {
     private final GalleryUnlockRepository galleryUnlockRepository;
     private final ShopVisitRepository shopVisitRepository;
     private final PostService postService;
+    private final PetService petService;
 
     @Value("${app.upload.dir}")
     private String uploadDir;
@@ -43,7 +44,8 @@ public class AuthController {
                           ShopService shopService, DishRepository dishRepository,
                           GalleryUnlockRepository galleryUnlockRepository,
                           ShopVisitRepository shopVisitRepository,
-                          PostService postService) {
+                          PostService postService,
+                          PetService petService) {
         this.userService = userService;
         this.passwordEncoder = passwordEncoder;
         this.emailService = emailService;
@@ -53,6 +55,7 @@ public class AuthController {
         this.galleryUnlockRepository = galleryUnlockRepository;
         this.shopVisitRepository = shopVisitRepository;
         this.postService = postService;
+        this.petService = petService;
     }
 
     @GetMapping("/")
@@ -163,6 +166,7 @@ public class AuthController {
                 model.addAttribute("checkinCount", galleryUnlockRepository.countByUserId(userId));  // 解锁菜品
                 model.addAttribute("favCount", userService.countUserFavorites(userId));             // 收藏数
                 model.addAttribute("postCount", postService.countByUser(userId));                   // 发帖数
+                model.addAttribute("petPoints", user.getPetPoints());                               // 宠物积分
             });
         }
         if (success != null) model.addAttribute("success", success);
@@ -295,8 +299,19 @@ public class AuthController {
                 imageUrl = saveCheckinImage(rawImage, userId);
             }
             boolean newlyUnlocked = galleryService.unlockDish(userId, dishId, imageUrl, checkinRequest.getComment());
+
+            // 打卡积分奖励
+            int pointsAwarded = 0;
+            if (newlyUnlocked && checkinRequest.getLatitude() != null && checkinRequest.getLongitude() != null) {
+                pointsAwarded = petService.awardCheckinPoints(userId, dishId,
+                        checkinRequest.getLatitude(), checkinRequest.getLongitude());
+            }
+
             String message = newlyUnlocked ? "打卡成功！图鉴已更新" : "该菜品已经解锁过了";
-            return "{\"success\": true, \"message\": \"" + message + "\"}";
+            if (pointsAwarded > 0) {
+                message += "，+" + pointsAwarded + " 积分";
+            }
+            return "{\"success\": true, \"message\": \"" + message + "\", \"pointsAwarded\": " + pointsAwarded + "}";
         } catch (Exception e) {
             return "{\"success\": false, \"message\": \"" + e.getMessage() + "\"}";
         }
@@ -472,6 +487,10 @@ class CheckinRequest {
     private String district;
     private String comment;
     private String image;
+    /** 用户打卡时的纬度 */
+    private Double latitude;
+    /** 用户打卡时的经度 */
+    private Double longitude;
 
     public Long getDishId() { return dishId; }
     public void setDishId(Long dishId) { this.dishId = dishId; }
@@ -485,6 +504,10 @@ class CheckinRequest {
     public void setComment(String comment) { this.comment = comment; }
     public String getImage() { return image; }
     public void setImage(String image) { this.image = image; }
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
 }
 
 

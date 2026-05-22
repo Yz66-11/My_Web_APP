@@ -72,7 +72,7 @@ public class SecurityConfig {
                         .requestMatchers("/merchants", "/merchant/**", "/profile",
                                 "/food-gallery", "/food-gallery/**", "/checkin", "/shop/**", "/my-shops",
                                 "/posts", "/post/**", "/update-profile", "/change-password",
-                                "/upload-avatar"
+                                "/upload-avatar", "/pet", "/pet/**"
                                 ).authenticated()
                         .anyRequest().authenticated()
                 )

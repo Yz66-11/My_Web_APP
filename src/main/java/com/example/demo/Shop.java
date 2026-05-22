@@ -18,6 +18,12 @@ public class Shop {
 
     private String location;
 
+    /** 纬度，用于距离积分计算 */
+    private Double latitude;
+
+    /** 经度，用于距离积分计算 */
+    private Double longitude;
+
     @Column(length = 200)
     private String coverUrl;
 
@@ -76,6 +82,12 @@ public class Shop {
 
     public String getLocation() { return location; }
     public void setLocation(String location) { this.location = location; }
+
+    public Double getLatitude() { return latitude; }
+    public void setLatitude(Double latitude) { this.latitude = latitude; }
+
+    public Double getLongitude() { return longitude; }
+    public void setLongitude(Double longitude) { this.longitude = longitude; }
 
     public String getCoverUrl() { return coverUrl; }
     public void setCoverUrl(String coverUrl) { this.coverUrl = coverUrl; }
